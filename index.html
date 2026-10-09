@@ -5,7 +5,19 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Fusion Tournament</title>
         <meta name="theme-color" content="#120a2e">
-        <script>document.documentElement.classList.add("js");</script>
+        <script>
+            document.documentElement.classList.add("js");
+            // First visit this session (with motion allowed): play the teaser intro
+            var introSeen = false;
+            try { introSeen = sessionStorage.getItem("fusion-intro") === "seen"; } catch (e) {}
+            if (!introSeen && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                document.documentElement.classList.add("splash-on");
+                // Safety net: if script.js never runs, don't leave the intro covering the page
+                window.splashFailsafe = setTimeout(function () {
+                    document.documentElement.classList.remove("splash-on");
+                }, 12000);
+            }
+        </script>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Saira:wght@400;500;600;700&display=swap">
@@ -15,6 +27,15 @@
         <script src="script.js" defer></script>
     </head>
     <body>
+        <div class="splash" id="splash">
+            <div class="splash-backdrop"></div>
+            <video class="splash-video" muted playsinline preload="none" aria-hidden="true">
+                <source src="vid/fusion-teaser.mp4" type="video/mp4; codecs=avc1.640028">
+                <source src="vid/fusion-teaser.webm" type="video/webm; codecs=vp9">
+            </video>
+            <button type="button" class="splash-skip">Skip intro</button>
+        </div>
+
         <header id="header">
             <a href="#" class="brand"><img src="img/logo-small.png" width="480" height="180" class="logo" alt="Fusion Tournament home"></a>
             <nav id="mySidenav" class="sidenav" aria-label="Main">
@@ -41,10 +62,6 @@
             </video>
             <div class="overlay-text">
                 <h1 class="hero-logo">
-                    <video class="logo-intro" muted playsinline preload="none" aria-hidden="true">
-                        <source src="vid/logo-intro.mp4" type="video/mp4; codecs=avc1.640028">
-                        <source src="vid/logo-intro.webm" type="video/webm; codecs=vp9">
-                    </video>
                     <picture>
                         <source srcset="img/logo-trim.webp" type="image/webp">
                         <img src="img/logo-trim.png" width="1200" height="450" alt="Fusion Tournament">

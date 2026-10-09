@@ -8,8 +8,9 @@ live site and its original repo. Nothing here is deployed.
 - New look built from the Fusion logo's colours (neon pink and cyan on deep violet), with the big logo as the
   hero and registration laid out as a ticket.
 - Works properly on phones (viewport set, real slide-out menu, no sideways scrolling).
-- Logo intro: the logo burst from the Fusion teaser plays once in the hero, then hands over to the still logo
-  (skipped for reduced motion or a slow connection).
+- Intro: the Fusion teaser plays full screen on a first visit. During the logo burst the site fades in behind it
+  and the teaser's logo glides onto the site's logo. Skippable, once per visit, and skipped for reduced motion
+  or a slow connection.
 - Rules page laid out like a game settings screen, with a note that rules may change on the day.
 - Game updated to FC 27; duplicate "Games" menu link removed.
 - One registration background for every screen size (phones used to download a separate 58 MB image).

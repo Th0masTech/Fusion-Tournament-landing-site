@@ -293,50 +293,104 @@ a {
     font-size: 1.125rem;
 }
 
-/* Logo intro: the burst from the Fusion teaser plays once over the hero, then the
-   still logo takes over. The clip is sized and centred so its final logo lands
-   exactly on the still one. */
-.hero-logo {
-    position: relative;
+/* Intro splash: the Fusion teaser plays full screen on a first visit. During the
+   logo burst the black melts away so the site shows through, and the teaser's
+   logo glides onto the site's logo before fading out (positions set in script.js). */
+.splash {
+    display: none;
 }
 
-.logo-intro {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    z-index: 0;
-    width: 204.9%;
+.splash-on {
+    overflow: hidden; /* hold the page still under the intro */
+}
+
+.splash-on .splash {
+    display: block;
+}
+
+.splash-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 98;
+    background: #000;
+    transition: opacity 1.4s ease;
+}
+
+.splash-video {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    width: 100%;
     max-width: none;
-    height: auto;
-    transform: translate(-50%, -50%);
-    mix-blend-mode: screen; /* the clip is on black, so the black drops out over the hero */
-    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
-    mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+    height: 100%;
+    object-fit: cover;
+    mix-blend-mode: screen; /* black in the film drops out once the backdrop fades */
+    transform-origin: 0 0;
     pointer-events: none;
-    transition: opacity 0.6s ease;
+    transition: transform 1.6s cubic-bezier(0.6, 0, 0.2, 1), opacity 0.8s ease 1.3s;
 }
 
-.js .hero-logo:has(.logo-intro) img {
+.splash-skip {
+    position: fixed;
+    right: var(--gutter);
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    z-index: 100;
+    padding: 0.65rem 1.2rem;
+    border: 1px solid rgba(244, 240, 255, 0.35);
+    border-radius: 999px;
+    background: rgba(11, 6, 32, 0.6);
+    color: var(--ink);
+    font: 600 0.95rem/1 var(--text);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, opacity 0.3s ease;
+}
+
+.splash-skip:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+}
+
+.splash.revealing .splash-backdrop,
+.splash.revealing .splash-video,
+.splash.skipping .splash-backdrop,
+.splash.skipping .splash-video {
     opacity: 0;
+}
+
+.splash.revealing .splash-skip,
+.splash.skipping .splash-skip {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.splash.skipping .splash-backdrop,
+.splash.skipping .splash-video {
+    transition: opacity 0.4s ease;
+}
+
+/* The site's logo waits under the intro, then fades in as the teaser's logo lands on it */
+.splash-on .hero-logo img,
+.splash-done .hero-logo img {
     animation: none;
 }
 
-.js .hero-logo.intro-done img {
-    opacity: 1;
-    animation: none;
-    transition: opacity 0.6s ease;
-}
-
-.hero-logo.intro-done .logo-intro {
+.splash-on:not(.splash-done) .hero-logo img {
     opacity: 0;
 }
 
-/* Text and button stay above the burst */
-.overlay-text > .tagline,
-.overlay-text > .prize,
-.overlay-text > .btn {
-    position: relative;
-    z-index: 1;
+.splash-done .hero-logo img {
+    transition: opacity 0.7s ease 1.2s;
+}
+
+.splash-fast .hero-logo img {
+    transition: opacity 0.4s ease;
+}
+
+/* Portrait screens: show the whole film instead of a narrow slice of it */
+@media (max-aspect-ratio: 4/3) {
+    .splash-video {
+        object-fit: contain;
+    }
 }
 
 .tagline {
