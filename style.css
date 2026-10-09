@@ -293,6 +293,52 @@ a {
     font-size: 1.125rem;
 }
 
+/* Logo intro: the burst from the Fusion teaser plays once over the hero, then the
+   still logo takes over. The clip is sized and centred so its final logo lands
+   exactly on the still one. */
+.hero-logo {
+    position: relative;
+}
+
+.logo-intro {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 0;
+    width: 204.9%;
+    max-width: none;
+    height: auto;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: screen; /* the clip is on black, so the black drops out over the hero */
+    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+    mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+}
+
+.js .hero-logo:has(.logo-intro) img {
+    opacity: 0;
+    animation: none;
+}
+
+.js .hero-logo.intro-done img {
+    opacity: 1;
+    animation: none;
+    transition: opacity 0.6s ease;
+}
+
+.hero-logo.intro-done .logo-intro {
+    opacity: 0;
+}
+
+/* Text and button stay above the burst */
+.overlay-text > .tagline,
+.overlay-text > .prize,
+.overlay-text > .btn {
+    position: relative;
+    z-index: 1;
+}
+
 .tagline {
     font-size: clamp(1.35rem, 0.95rem + 1.7vw, 2.15rem);
     font-weight: 600;
