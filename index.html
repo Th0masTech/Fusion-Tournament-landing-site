@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Fusion Tournament</title>
+        <meta name="theme-color" content="#120a2e">
+        <script>document.documentElement.classList.add("js");</script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Saira:wght@400;500;600;700&display=swap">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+        <link rel="stylesheet" href="style.css">
+        <link rel="icon" type="image/x-icon" href="img/logo.png">
+        <script src="script.js" defer></script>
+    </head>
+    <body>
+        <header id="header">
+            <a href="#" class="brand"><img src="img/logo-small.png" width="480" height="180" class="logo" alt="Fusion Tournament home"></a>
+            <nav id="mySidenav" class="sidenav" aria-label="Main">
+                <button type="button" class="closebtn" aria-label="Close menu" onclick="closeNav()">&times;</button>
+                <ul id="navbar">
+                    <li><a class="active" href="index.html">Home</a></li>
+                    <li><a href="#about-index">About</a></li>
+                    <li><a href="rules.html">Rules</a></li>
+                    <li><a href="#register">Sign up</a></li>
+                    <li><a href="#foot">Contact</a></li>
+                </ul>
+            </nav>
+            <div id="mobile">
+                <button type="button" id="bar" class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mySidenav" onclick="openNav()">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                </button>
+            </div>
+        </header>
+
+        <section class="video-container hero">
+            <video class="hero-video" playsinline autoplay muted loop>
+                <source src="vid/SSYouTube.online_Super Smash Bros. Ultimate -  Everyone is Here! (Live Wallpaper)_1080p.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="overlay-text">
+                <h1 class="hero-logo">
+                    <picture>
+                        <source srcset="img/logo-trim.webp" type="image/webp">
+                        <img src="img/logo-trim.png" width="1200" height="450" alt="Fusion Tournament">
+                    </picture>
+                </h1>
+                <p class="tagline">Play your favourite games<br>and make Money</p>
+                <p class="prize">$100 cash prizes!!!</p>
+                <a class="btn btn-primary" href="#register">Register</a>
+            </div>
+        </section>
+
+        <section id="about-index">
+            <div class="about-copy">
+                <h2 class="section-title">Fusion Tournament</h2>
+                <p>The Fusion tournament from DEETS brings you an offline inperson tournament where you compete to be crowned
+                    The Fusion king and leave with $100 in cash prizes.
+                </p>
+                <p>There are two games in the Tournament, SuperSmashBros and FC27!</p>
+                <p>
+                    The tournament is hosted at <b>Ponyboat</b>, this year its a double elimination tournament.
+                    Come over have fun, and see if you have what it takes to be a king.
+                </p>
+            </div>
+        </section>
+
+        <section class="vid" aria-label="Tournament videos">
+            <div class="video-con">
+                <video class="recap" width="854" height="480" playsinline autoplay muted loop>
+                    <source src="vid/Fusion website new video.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <video class="recap" width="854" height="480" playsinline autoplay muted loop>
+                    <source src="vid/Fusion Website video 2.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </section>
+
+        <section id="register">
+            <div class="ticket">
+                <div class="ticket-main">
+                    <h2 class="section-title">Registration</h2>
+                    <p>Do you have what it takes to become the Fusion King?</p>
+                    <p>Join the Fusion Tournament and win big!</p>
+                    <p>One ticket per tournament, purchase two tickets to play both!</p>
+                    <a class="btn btn-primary" href="https://square.link/u/8Xvnh5vR">Buy tickets</a>
+                </div>
+                <div class="ticket-stub">
+                    <h3>Registration Deadline and Tournament Date:</h3>
+                    <p class="deadline">17th October 2026</p>
+                    <p class="fine-print">No refunds after payment. Enjoy!!!</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="newsletter">
+            <div class="newstext">
+                <h2>Sign up for updates</h2>
+                <p>Get email updates about our latest Tournaments and special offers.</p>
+            </div>
+            <div class="form">
+                <input type="email" placeholder="Your email address" aria-label="Your email address">
+                <button type="button" class="btn btn-secondary">Sign Up</button>
+            </div>
+        </section>
+
+        <footer id="foot">
+            <div class="foot-grid">
+                <div class="col">
+                    <img class="logo" src="img/logo-small.png" width="480" height="180" alt="Fusion Tournament" loading="lazy">
+                    <h4>Contact</h4>
+                    <p><strong>Address:</strong> Charlottetown, PE, Canada</p>
+                    <p><strong>Phone:</strong> (902)3882269</p>
+                    <p><strong>Email:</strong> <a href="mailto:fusion@deets.technology">fusion@deets.technology</a></p>
+                </div>
+                <div class="col follow">
+                    <h4>Follow us</h4>
+                    <div class="icon" aria-hidden="true">
+                        <i class="fab fa-facebook"></i>
+                        <i class="fab fa-twitter"></i>
+                        <i class="fab fa-instagram"></i>
+                        <i class="fab fa-pinterest-p"></i>
+                        <i class="fab fa-youtube"></i>
+                    </div>
+                </div>
+                <div class="col">
+                    <h4>About</h4>
+                    <a href="#">About us</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms &amp; Conditions</a>
+                    <a href="#">Contact us</a>
+                    <p class="pay-label">Secured Payment Gateways</p>
+                    <img class="pay" src="img/pay.png" width="224" height="32" alt="" loading="lazy">
+                </div>
+            </div>
+            <div class="copyright">
+                <p><a href="https://deets.technology/">DEETS</a></p>
+            </div>
+        </footer>
+    </body>
+</html>

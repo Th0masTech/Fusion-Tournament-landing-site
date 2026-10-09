@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Fusion Tournament</title>
+        <meta name="theme-color" content="#120a2e">
+        <script>document.documentElement.classList.add("js");</script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Saira:wght@400;500;600;700&display=swap">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+        <link rel="stylesheet" href="style.css">
+        <link rel="icon" type="image/x-icon" href="img/logo.png">
+        <script src="script.js" defer></script>
+    </head>
+    <body class="page-rules">
+        <header id="header" class="scrolled">
+            <a href="index.html" class="brand"><img src="img/logo-small.png" width="480" height="180" class="logo" alt="Fusion Tournament home"></a>
+            <nav id="mySidenav" class="sidenav" aria-label="Main">
+                <button type="button" class="closebtn" aria-label="Close menu" onclick="closeNav()">&times;</button>
+                <ul id="navbar">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html">About</a></li>
+                    <li><a class="active" href="#rules">Rules</a></li>
+                    <li><a href="index.html">Sign up</a></li>
+                    <li><a href="#foot">Contact</a></li>
+                </ul>
+            </nav>
+            <div id="mobile">
+                <button type="button" id="bar" class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mySidenav" onclick="openNav()">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                </button>
+            </div>
+        </header>
+
+        <section id="rules">
+            <div class="rules-head">
+                <h1 class="section-title">Rules</h1>
+                <p>Welcome to the Fusion Tournament! These are the rules:</p>
+                <p class="rules-note"><i class="fas fa-info-circle" aria-hidden="true"></i> <span>Rules may change on tournament day. Any changes will be announced before matches start, and organizers have the final say.</span></p>
+            </div>
+
+            <div class="rule-sets">
+                <div class="rule-set">
+                    <h2>Super Smash Bros:</h2>
+                    <ul>
+                        <li><span>Ruleset:</span> <b>3 Stock</b></li>
+                        <li><span>Time Limit:</span> <b>6–8 minutes</b></li>
+                        <li><span>Items:</span> <b>Off</b></li>
+                        <li><span>Stage Selection:</span> <b>Anyone</b></li>
+                        <li><span>Stage Hazard Toggle:</span> <b>Off</b></li>
+                        <li><span>Final Smash Meter:</span> <b>Off</b></li>
+                        <li><span>Spirits:</span> <b>Off</b></li>
+                        <li><span>Damage Handicap:</span> <b>Off</b></li>
+                        <li><span>First to:</span> <b>1 Win</b></li>
+                        <li><span>Launch Rate:</span> <b>1.0x</b></li>
+                        <li><span>Underdog Boost:</span> <b>Off</b></li>
+                        <li><span>Score Display:</span> <b>Off</b></li>
+                        <li><span>% Show Damage:</span> <b>Yes</b></li>
+                        <li><span>Custom Balance:</span> <b>Off</b></li>
+                        <li><span>Echo Fighters:</span> <b>Separate</b></li>
+                        <li><span>Radar:</span> <b>Big</b></li>
+                        <li class="note">Mii Fighters and their respective custom moves are allowed. Movesets must be shown in the name (e.g., 1111, 2223, 3121).</li>
+                        <li class="note">If time runs out: winner is determined first by stocks, then percentage.</li>
+                        <li class="note">If both stock and percentage are equal, or both players lose their last stock at the same time: a tiebreaker is played (1 stock, 3 minutes, same characters and stage).</li>
+                        <li class="note">Pausing is turned off.</li>
+                    </ul>
+                </div>
+
+                <div class="rule-set">
+                    <h2>FC 27:</h2>
+                    <ul>
+                        <li><span>Ruleset:</span> <b>1v1</b></li>
+                        <li><span>Time Limit:</span> <b>12 minutes</b></li>
+                        <li><span>Half Time:</span> <b>6 minutes</b></li>
+                        <li><span>Overtime:</span> <b>2 minutes</b></li>
+                        <li><span>Stadium:</span> <b>Any</b></li>
+                        <li><span>VAR:</span> <b>On</b></li>
+                        <li><span>Custom Tactics:</span> <b>Allowed</b></li>
+                        <li><span>Player Switching:</span> <b>Allowed</b></li>
+                        <li><span>Pausing:</span> <b>Off</b></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="newsletter">
+            <div class="newstext">
+                <h2>Sign up for updates</h2>
+                <p>Get email updates about our latest Tournaments and special offers.</p>
+            </div>
+            <div class="form">
+                <input type="email" placeholder="Your email address" aria-label="Your email address">
+                <button type="button" class="btn btn-secondary">Sign Up</button>
+            </div>
+        </section>
+
+        <footer id="foot">
+            <div class="foot-grid">
+                <div class="col">
+                    <img class="logo" src="img/logo-small.png" width="480" height="180" alt="Fusion Tournament" loading="lazy">
+                    <h4>Contact</h4>
+                    <p><strong>Address:</strong> Charlottetown, PE, Canada</p>
+                    <p><strong>Phone:</strong> (902)3882269</p>
+                    <p><strong>Email:</strong> <a href="mailto:fusion@deets.technology">fusion@deets.technology</a></p>
+                </div>
+                <div class="col follow">
+                    <h4>Follow us</h4>
+                    <div class="icon" aria-hidden="true">
+                        <i class="fab fa-facebook"></i>
+                        <i class="fab fa-twitter"></i>
+                        <i class="fab fa-instagram"></i>
+                        <i class="fab fa-pinterest-p"></i>
+                        <i class="fab fa-youtube"></i>
+                    </div>
+                </div>
+                <div class="col">
+                    <h4>About</h4>
+                    <a href="#">About us</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms &amp; Conditions</a>
+                    <a href="#">Contact us</a>
+                    <p class="pay-label">Secured Payment Gateways</p>
+                    <img class="pay" src="img/pay.png" width="224" height="32" alt="" loading="lazy">
+                </div>
+            </div>
+            <div class="copyright">
+                <p><a href="https://deets.technology/">DEETS</a></p>
+            </div>
+        </footer>
+    </body>
+</html>

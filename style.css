@@ -1,0 +1,866 @@
+/* Fusion Tournament
+   Colours come straight from the logo: a midnight-violet night, the pink neon tube
+   and the cyan lettering. Michroma (wide, Eurostile-style) for titles, Saira for text. */
+
+:root {
+    color-scheme: dark;
+    --night: #120a2e;
+    --night-deep: #0b0620;
+    --panel: #1d1145;
+    --panel-2: #251656;
+    --line: #3a2a78;
+    --pink: #e143a9;
+    --pink-hot: #ff62c6;
+    --cyan: #02c5fe;
+    --ink: #f4f0ff;
+    --muted: #b9b0dd;
+
+    --display: "Michroma", "Eurostile", "Arial Black", sans-serif;
+    --text: "Saira", "Segoe UI", system-ui, sans-serif;
+
+    --gutter: clamp(1.25rem, 5vw, 5rem);
+    --maxw: 72rem;
+    --header-h: 4.5rem;
+    --section-y: clamp(4rem, 9vw, 7rem);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: var(--header-h);
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background: var(--night);
+    color: var(--ink);
+    font-family: var(--text);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+img,
+video,
+picture {
+    display: block;
+    max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-weight: 400;
+    line-height: 1.15;
+}
+
+p + p {
+    margin-top: 0.9em;
+}
+
+a {
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+}
+
+.section-title {
+    font-family: var(--display);
+    font-size: clamp(1.45rem, 1.05rem + 1.7vw, 2.15rem);
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+
+/* Buttons */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.7rem 2.25rem;
+    border: 0;
+    border-radius: 6px;
+    font: 700 1.0625rem/1 var(--text);
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary {
+    background: var(--pink);
+    color: var(--night);
+}
+
+.btn-primary:hover {
+    background: var(--pink-hot);
+    box-shadow: 0 0 0 1px var(--pink-hot), 0 0 24px rgba(225, 67, 169, 0.6);
+}
+
+.btn-secondary {
+    background: var(--cyan);
+    color: var(--night);
+}
+
+.btn-secondary:hover {
+    box-shadow: 0 0 22px rgba(2, 197, 254, 0.55);
+}
+
+/* Header */
+
+#header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+}
+
+/* The solid bar sits on a pseudo-element so its blur can't trap the fixed mobile menu */
+#header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgba(18, 10, 46, 0.88);
+    border-bottom: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    transition: opacity 0.3s ease;
+}
+
+.brand {
+    display: block;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#header .logo {
+    width: auto;
+    height: 2.6rem;
+}
+
+/* Over the hero the big logo does the talking, so the bar and small logo step back */
+.js #header:not(.scrolled)::before {
+    opacity: 0;
+}
+
+.js #header:not(.scrolled) .brand {
+    opacity: 0;
+    visibility: hidden;
+}
+
+#navbar {
+    display: flex;
+    align-items: center;
+    gap: 2.25rem;
+    list-style: none;
+}
+
+#navbar a {
+    position: relative;
+    display: block;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+#navbar a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.2rem;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s ease;
+}
+
+#navbar a:hover {
+    color: var(--cyan);
+}
+
+#navbar a:hover::after,
+#navbar a.active::after {
+    transform: scaleX(1);
+}
+
+#mobile {
+    display: none;
+}
+
+.menu-btn,
+.closebtn {
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.menu-btn {
+    display: grid;
+    font-size: 1.35rem;
+}
+
+.closebtn {
+    display: none;
+}
+
+/* Hero */
+
+.hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    place-items: center;
+    min-height: 92vh;
+    min-height: 92svh;
+    padding: calc(var(--header-h) + 2rem) var(--gutter) 4.5rem;
+    overflow: hidden;
+    text-align: center;
+}
+
+.hero-video {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(180deg, rgba(18, 10, 46, 0.72) 0%, rgba(18, 10, 46, 0.3) 32%, rgba(18, 10, 46, 0.6) 72%, var(--night) 100%),
+        rgba(64, 26, 150, 0.32);
+}
+
+.overlay-text {
+    display: grid;
+    justify-items: center;
+    gap: 1.4rem;
+    max-width: 60rem;
+}
+
+.overlay-text > * {
+    margin: 0;
+}
+
+.hero-logo img {
+    width: min(44rem, 88vw);
+    height: auto;
+    margin-bottom: -0.25rem;
+    filter: drop-shadow(0 0 30px rgba(2, 197, 254, 0.35));
+    animation: power-on 1.6s ease-out 0.2s both;
+}
+
+.overlay-text .btn {
+    min-height: 3.35rem;
+    padding-inline: 3rem;
+    font-size: 1.125rem;
+}
+
+.tagline {
+    font-size: clamp(1.35rem, 0.95rem + 1.7vw, 2.15rem);
+    font-weight: 600;
+    line-height: 1.2;
+    text-shadow: 0 2px 18px rgba(5, 2, 15, 0.7);
+}
+
+.prize {
+    padding: 0.6rem 1.2rem;
+    border: 1.5px solid var(--pink);
+    border-radius: 6px;
+    background: rgba(18, 10, 46, 0.6);
+    box-shadow: 0 0 18px rgba(225, 67, 169, 0.5), inset 0 0 14px rgba(225, 67, 169, 0.3);
+    font-family: var(--display);
+    font-size: clamp(0.95rem, 0.75rem + 0.9vw, 1.35rem);
+    line-height: 1.3;
+}
+
+/* The logo switches on like a neon sign: one stutter, then steady */
+@keyframes power-on {
+    0% {
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 1;
+    }
+
+    38% {
+        opacity: 0.35;
+    }
+
+    50%,
+    100% {
+        opacity: 1;
+    }
+}
+
+/* About */
+
+#about-index {
+    display: flex;
+    align-items: center;
+    min-height: clamp(32rem, 75vh, 46rem);
+    padding: var(--section-y) var(--gutter);
+    background:
+        linear-gradient(180deg, var(--night) 0%, rgba(18, 10, 46, 0) 22%, rgba(18, 10, 46, 0) 78%, var(--night) 100%),
+        linear-gradient(90deg, var(--night) 0%, rgba(18, 10, 46, 0.9) 34%, rgba(18, 10, 46, 0.25) 66%, rgba(18, 10, 46, 0.1) 100%),
+        url("img/ea-sports-fc-24-erling-haaland-game-4k-back.jpg") 72% 30% / cover no-repeat;
+}
+
+.about-copy {
+    width: 100%;
+    max-width: var(--maxw);
+    margin: 0 auto;
+}
+
+.about-copy > * {
+    max-width: 34rem;
+}
+
+.about-copy .section-title {
+    margin-bottom: 1.5rem;
+}
+
+/* Previous tournament videos */
+
+.vid {
+    padding: clamp(3rem, 6vw, 5rem) var(--gutter);
+    background:
+        linear-gradient(180deg, var(--night) 0%, rgba(18, 10, 46, 0.86) 25%, rgba(18, 10, 46, 0.86) 75%, var(--night) 100%),
+        url("img/WPFC.jpg") center / cover no-repeat;
+}
+
+.video-con {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: clamp(1rem, 2.5vw, 2rem);
+    max-width: var(--maxw);
+    margin: 0 auto;
+}
+
+.video-con video {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--night-deep);
+}
+
+/* Registration: laid out as a ticket, since that's what you're buying */
+
+/* One background for every screen size (phones used to download a separate 58 MB image) */
+#register {
+    padding: var(--section-y) var(--gutter);
+    background:
+        linear-gradient(90deg, rgba(18, 10, 46, 0.9) 0%, rgba(18, 10, 46, 0.55) 55%, rgba(18, 10, 46, 0.2) 100%),
+        url("img/967393.jpg") right top / cover no-repeat;
+    background-color: var(--night);
+}
+
+.ticket {
+    --n: 0.9rem;
+    --hole: transparent var(--n), #000 calc(var(--n) + 0.5px);
+    --cut-main:
+        radial-gradient(circle at 100% 0, var(--hole)) top / 100% 51% no-repeat,
+        radial-gradient(circle at 100% 100%, var(--hole)) bottom / 100% 51% no-repeat;
+    --cut-stub:
+        radial-gradient(circle at 0 0, var(--hole)) top / 100% 51% no-repeat,
+        radial-gradient(circle at 0 100%, var(--hole)) bottom / 100% 51% no-repeat;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    width: min(100%, 56rem);
+    margin-left: max(0px, calc((100% - var(--maxw)) / 2));
+    filter: drop-shadow(0 24px 40px rgba(5, 2, 15, 0.55));
+}
+
+.ticket-main,
+.ticket-stub {
+    padding: clamp(1.75rem, 4vw, 3rem);
+}
+
+.ticket-main {
+    border-radius: 18px 0 0 18px;
+    background: var(--panel);
+    -webkit-mask: var(--cut-main);
+    mask: var(--cut-main);
+}
+
+.ticket-main .section-title {
+    margin-bottom: 1.25rem;
+}
+
+.ticket-main .btn {
+    margin-top: 1.75rem;
+}
+
+.ticket-stub {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.4rem;
+    padding-inline: 2rem;
+    border-left: 2px dashed rgba(185, 176, 221, 0.35);
+    border-radius: 0 18px 18px 0;
+    background: var(--panel-2);
+    -webkit-mask: var(--cut-stub);
+    mask: var(--cut-stub);
+}
+
+.ticket-stub h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.ticket-stub p {
+    margin: 0;
+}
+
+.ticket-stub .deadline {
+    font-family: var(--display);
+    font-size: 1.05rem;
+    line-height: 1.5;
+}
+
+.ticket-stub .fine-print {
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+/* Newsletter */
+
+#newsletter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 3rem;
+    padding: clamp(2.5rem, 5vw, 3.5rem) max(var(--gutter), calc((100% - var(--maxw)) / 2));
+    border-top: 1px solid var(--line);
+}
+
+.newstext h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.newstext p {
+    margin-top: 0.35rem;
+    color: var(--muted);
+}
+
+.form {
+    display: flex;
+    flex: 1 1 20rem;
+    min-width: 0; /* lets the email box shrink on narrow phones */
+    max-width: 30rem;
+}
+
+.form input {
+    flex: 1;
+    min-width: 0;
+    height: 3rem;
+    padding: 0 1rem;
+    border: 1px solid var(--line);
+    border-right: 0;
+    border-radius: 6px 0 0 6px;
+    background: var(--night-deep);
+    color: var(--ink);
+    font: inherit;
+}
+
+.form input::placeholder {
+    color: var(--muted);
+    opacity: 1;
+}
+
+.form input:focus-visible {
+    outline-offset: -2px;
+}
+
+.form .btn {
+    padding-inline: 1.5rem;
+    border-radius: 0 6px 6px 0;
+}
+
+/* Footer */
+
+#foot {
+    padding: clamp(3rem, 6vw, 4.5rem) var(--gutter) 2rem;
+    border-top: 1px solid var(--line);
+    background: var(--night-deep);
+}
+
+.foot-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 2.5rem;
+    max-width: var(--maxw);
+    margin: 0 auto;
+}
+
+#foot .logo {
+    width: 10rem;
+    height: auto;
+    margin-bottom: 1.75rem;
+}
+
+#foot h4 {
+    margin-bottom: 0.9rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+#foot p,
+#foot a {
+    font-size: 0.95rem;
+    color: var(--muted);
+}
+
+#foot p + p {
+    margin-top: 0.35rem;
+}
+
+#foot strong {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+#foot a {
+    display: block;
+    width: fit-content;
+    margin-bottom: 0.5rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+#foot a:hover {
+    color: var(--cyan);
+}
+
+/* Links inside a sentence (email, DEETS) stay inline */
+#foot p a {
+    display: inline;
+    margin: 0;
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
+}
+
+#foot .copyright a {
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.icon {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.1rem;
+    font-size: 1.3rem;
+    color: var(--ink);
+}
+
+#foot .pay-label {
+    margin-top: 1.25rem;
+}
+
+#foot .pay {
+    margin-top: 0.6rem;
+}
+
+.copyright {
+    max-width: var(--maxw);
+    margin: 2.75rem auto 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+}
+
+#foot .copyright p {
+    font-size: 0.85rem;
+}
+
+/* Rules page: each game's settings laid out like the game's own rules screen */
+
+#rules {
+    padding: calc(var(--header-h) + clamp(2.5rem, 6vw, 4.5rem)) var(--gutter) var(--section-y);
+    background: radial-gradient(ellipse 70% 45% at 50% 0%, rgba(99, 45, 208, 0.35), transparent 70%);
+}
+
+.rules-head,
+.rule-sets {
+    max-width: var(--maxw);
+    margin: 0 auto;
+}
+
+.rules-head {
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.rules-head .section-title {
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.9rem, 1.3rem + 2.4vw, 3rem);
+}
+
+.rules-head p {
+    font-size: 1.125rem;
+    color: var(--muted);
+}
+
+.rules-head .rules-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    max-width: 40rem;
+    margin-top: 1.25rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--night-deep);
+    font-size: 1rem;
+    color: var(--ink);
+}
+
+.rules-note i,
+.rules-note svg {
+    flex-shrink: 0;
+    margin-top: 0.3em;
+    color: var(--cyan);
+}
+
+.rule-sets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: clamp(1rem, 2.5vw, 2rem);
+    align-items: start;
+}
+
+.rule-set {
+    --accent: var(--pink);
+    padding: clamp(1.5rem, 3.5vw, 2.25rem);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--accent);
+    border-radius: 14px;
+    background: var(--panel);
+}
+
+.rule-set + .rule-set {
+    --accent: var(--cyan);
+}
+
+.rule-set h2 {
+    margin-bottom: 0.75rem;
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 0.95rem + 0.6vw, 1.35rem);
+    line-height: 1.3;
+}
+
+.rule-set ul {
+    list-style: none;
+}
+
+.rule-set li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(58, 42, 120, 0.7);
+    line-height: 1.45;
+}
+
+.rule-set li:last-child {
+    border-bottom: 0;
+}
+
+.rule-set li span {
+    color: var(--muted);
+}
+
+.rule-set li b {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: right;
+}
+
+/* Full-sentence rules read as notes under the settings */
+.rule-set li.note {
+    display: block;
+    margin-top: 0.75rem;
+    padding: 0.1rem 0 0.1rem 1rem;
+    border-bottom: 0;
+    border-left: 2px solid var(--accent);
+}
+
+/* Tablet and phone */
+
+@media (max-width: 860px) {
+    #mobile {
+        display: block;
+    }
+
+    .sidenav {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        width: min(18rem, 84vw);
+        padding: 5.5rem 2rem 2rem;
+        border-left: 1px solid var(--line);
+        background: var(--night-deep);
+        /* Clipped rather than pushed off-screen: an off-screen panel makes phones zoom the page out */
+        clip-path: inset(0 0 0 100%);
+        visibility: hidden;
+        transition: clip-path 0.3s ease, visibility 0s linear 0.3s;
+    }
+
+    .sidenav.is-open {
+        clip-path: inset(0);
+        visibility: visible;
+        transition: clip-path 0.3s ease;
+    }
+
+    .closebtn {
+        display: grid;
+        position: absolute;
+        top: 0.9rem;
+        right: 1rem;
+        font-size: 2rem;
+        line-height: 1;
+    }
+
+    #navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.1rem;
+    }
+
+    #navbar a {
+        font-size: 1.3rem;
+    }
+
+    body.nav-open::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 45;
+        background: rgba(5, 2, 15, 0.6);
+    }
+
+    #about-index {
+        min-height: 0;
+    }
+
+    .foot-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .foot-grid .col:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 760px) {
+    #about-index {
+        min-height: 0;
+        background:
+            linear-gradient(180deg, var(--night) 0%, rgba(18, 10, 46, 0.8) 30%, rgba(18, 10, 46, 0.88) 100%),
+            url("img/ea-sports-fc-24-erling-haaland-game-4k-back.jpg") 65% center / cover no-repeat;
+    }
+
+    .ticket {
+        --cut-main:
+            radial-gradient(circle at 0 100%, var(--hole)) left / 51% 100% no-repeat,
+            radial-gradient(circle at 100% 100%, var(--hole)) right / 51% 100% no-repeat;
+        --cut-stub:
+            radial-gradient(circle at 0 0, var(--hole)) left / 51% 100% no-repeat,
+            radial-gradient(circle at 100% 0, var(--hole)) right / 51% 100% no-repeat;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ticket-main {
+        border-radius: 18px 18px 0 0;
+    }
+
+    .ticket-stub {
+        border-top: 2px dashed rgba(185, 176, 221, 0.35);
+        border-left: 0;
+        border-radius: 0 0 18px 18px;
+    }
+
+    .form {
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .foot-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Big 2K/4K screens: scale everything up rather than leaving it tiny */
+@media (min-width: 2200px) {
+    html {
+        font-size: 125%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .hero-logo img {
+        animation: none;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+    }
+}
