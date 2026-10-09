@@ -159,14 +159,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // People who turn off motion get still frames; recaps keep controls so they can still play them
+    // People who turn off motion get still frames; the gameplay videos wait for a tap to play
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         document.querySelectorAll("video[autoplay]").forEach(function (video) {
             video.removeAttribute("autoplay");
             video.pause();
-            if (video.classList.contains("recap")) {
-                video.controls = true;
-            }
+        });
+        document.querySelectorAll(".yt-embed").forEach(function (frame) {
+            frame.src = frame.src.replace("autoplay=1", "autoplay=0");
         });
     }
 });

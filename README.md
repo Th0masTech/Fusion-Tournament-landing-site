@@ -13,6 +13,8 @@ live site and its original repo. Nothing here is deployed.
   or a slow connection.
 - Rules page laid out like a game settings screen, with a note that rules may change on the day.
 - Game updated to FC 27; duplicate "Games" menu link removed.
+- Gameplay section with the official Super Smash Bros. Ultimate and EA SPORTS FC 27 trailers, embedded
+  from YouTube (replacing the previous-tournament clips).
 - One registration background for every screen size (phones used to download a separate 58 MB image).
 
 ## Files not in this repo
@@ -20,8 +22,6 @@ live site and its original repo. Nothing here is deployed.
 These are on the live web host and need to be copied in before deploying from this repo:
 
 - `vid/SSYouTube.online_Super Smash Bros. Ultimate -  Everyone is Here! (Live Wallpaper)_1080p.mp4`
-- `vid/Fusion website new video.mp4`
-- `vid/Fusion Website video 2.mp4`
 - `img/967393.jpg` (registration background)
 
 ## Viewing it locally

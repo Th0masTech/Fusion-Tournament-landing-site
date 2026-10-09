@@ -475,14 +475,47 @@ a {
     margin: 0 auto;
 }
 
-.video-con video {
+.vid .section-title {
+    max-width: var(--maxw);
+    margin: 0 auto 2rem;
+}
+
+.clip {
+    min-width: 0;
+    margin: 0;
+}
+
+.clip iframe {
+    display: block;
     width: 100%;
     height: auto;
     aspect-ratio: 16 / 9;
-    object-fit: cover;
     border: 1px solid var(--line);
     border-radius: 12px;
     background: var(--night-deep);
+}
+
+.clip figcaption {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.85rem;
+    font-weight: 600;
+}
+
+/* Same colour per game as the Rules page: pink for Smash, cyan for FC */
+.clip figcaption::before {
+    content: "";
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--pink);
+    box-shadow: 0 0 10px var(--pink);
+}
+
+.clip + .clip figcaption::before {
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
 }
 
 /* Registration: laid out as a ticket, since that's what you're buying */
