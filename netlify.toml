@@ -1,0 +1,9 @@
+# Netlify settings for the Fusion site. The pages are plain HTML; the build step only
+# copies them into dist/. Sign-ups and the bracket run on the functions in
+# netlify/functions, backed by Netlify Database (created on the first deploy).
+[build]
+  command = "node scripts/build-static.mjs"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"

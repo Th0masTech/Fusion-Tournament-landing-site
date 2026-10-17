@@ -25,6 +25,7 @@
         <link rel="stylesheet" href="style.css">
         <link rel="icon" type="image/x-icon" href="img/logo.png">
         <script src="script.js" defer></script>
+        <script src="js/signup.js" defer></script>
     </head>
     <body>
         <div class="splash" id="splash">
@@ -45,6 +46,7 @@
                     <li><a href="#about-index">About</a></li>
                     <li><a href="rules.html">Rules</a></li>
                     <li><a href="#register">Sign up</a></li>
+                    <li><a href="bracket.html">Bracket</a></li>
                     <li><a href="#foot">Contact</a></li>
                 </ul>
             </nav>
@@ -106,9 +108,52 @@
                 <div class="ticket-main">
                     <h2 class="section-title">Registration</h2>
                     <p>Do you have what it takes to become the Fusion King?</p>
-                    <p>Join the Fusion Tournament and win big!</p>
-                    <p>One ticket per tournament, purchase two tickets to play both!</p>
-                    <a class="btn btn-primary" href="https://square.link/u/8Xvnh5vR">Buy tickets</a>
+                    <ol class="reg-steps">
+                        <li><b>Sign up</b> below and your gamer tag goes straight into the bracket.</li>
+                        <li><b>Buy a ticket</b> for each tournament you play. Sign-ups that aren't paid get removed.</li>
+                    </ol>
+                    <form id="signup" class="signup" novalidate>
+                        <div class="field">
+                            <label for="su-tag">Gamer tag</label>
+                            <input id="su-tag" name="tag" type="text" maxlength="24" autocomplete="nickname" spellcheck="false" required aria-describedby="su-tag-hint">
+                            <small id="su-tag-hint">Shown in the bracket</small>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="su-name">Real name</label>
+                                <input id="su-name" name="realname" type="text" maxlength="60" autocomplete="name" required>
+                            </div>
+                            <div class="field">
+                                <label for="su-email">Email</label>
+                                <input id="su-email" name="email" type="email" maxlength="120" autocomplete="email" required>
+                            </div>
+                        </div>
+                        <fieldset class="game-pick">
+                            <legend>Which tournaments?</legend>
+                            <label class="game-opt" data-game="smash"><input type="checkbox" name="games" value="smash"><span>Super Smash Bros. Ultimate</span><em class="closed-note" hidden>Bracket started</em></label>
+                            <label class="game-opt" data-game="fc"><input type="checkbox" name="games" value="fc"><span>EA SPORTS FC 27</span><em class="closed-note" hidden>Bracket started</em></label>
+                        </fieldset>
+                        <div class="hp" aria-hidden="true">
+                            <label for="su-company">Company</label>
+                            <input id="su-company" name="company" type="text" tabindex="-1" autocomplete="off">
+                        </div>
+                        <p class="form-msg" id="su-msg" role="alert" hidden></p>
+                        <div class="signup-actions">
+                            <button type="submit" class="btn btn-primary" id="su-submit">Sign up</button>
+                            <p class="privacy">Only the organizers see your real name and email.</p>
+                        </div>
+                    </form>
+                    <div class="signup-done" id="signup-done" tabindex="-1" hidden>
+                        <p class="done-eyebrow">You're in the bracket</p>
+                        <p class="done-tag" id="done-tag"></p>
+                        <p id="done-text"></p>
+                        <div class="signup-actions">
+                            <a class="btn btn-primary" href="https://square.link/u/8Xvnh5vR">Buy tickets</a>
+                            <a class="btn btn-secondary" href="bracket.html">See the bracket</a>
+                        </div>
+                        <button type="button" class="text-btn" id="signup-again">Sign up someone else</button>
+                    </div>
+                    <p class="reg-links">Already signed up? <a href="https://square.link/u/8Xvnh5vR">Buy tickets</a> or <a href="bracket.html">see the bracket</a>.</p>
                 </div>
                 <div class="ticket-stub">
                     <h3>Registration Deadline and Tournament Date:</h3>

@@ -70,6 +70,11 @@ a {
     color: inherit;
 }
 
+/* Anything marked hidden stays hidden, even when a class sets its display */
+[hidden] {
+    display: none !important;
+}
+
 :focus-visible {
     outline: 2px solid var(--cyan);
     outline-offset: 3px;
@@ -598,6 +603,211 @@ a {
     margin-top: 1.25rem;
     font-size: 0.9rem;
     color: var(--muted);
+}
+
+/* Sign-up form inside the ticket */
+
+.reg-steps {
+    display: grid;
+    gap: 0.35rem;
+    margin: 1.1rem 0 1.5rem;
+    padding-left: 1.4rem;
+    color: var(--muted);
+}
+
+.reg-steps b {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.signup {
+    display: grid;
+    gap: 1rem;
+}
+
+.field {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 1rem;
+}
+
+.field label,
+.game-pick legend {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.field small {
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.field input {
+    width: 100%;
+    height: 3rem;
+    padding: 0 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--night-deep);
+    color: var(--ink);
+    font: inherit;
+}
+
+.field input:focus-visible {
+    outline-offset: -2px;
+    border-color: var(--cyan);
+}
+
+.game-pick {
+    display: grid;
+    gap: 0.6rem;
+    min-width: 0;
+    border: 0;
+}
+
+.game-pick legend {
+    margin-bottom: 0.5rem;
+}
+
+/* Pink for Smash, cyan for FC, same as the Rules page */
+.game-opt {
+    --accent: var(--pink);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--night-deep);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.game-opt[data-game="fc"] {
+    --accent: var(--cyan);
+}
+
+.game-opt input {
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--accent);
+}
+
+.game-opt:has(input:checked) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.game-opt.is-closed {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.closed-note {
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-style: normal;
+    color: var(--muted);
+}
+
+/* Honeypot for bots: off-screen, never seen by people */
+.hp {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.form-msg {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--pink);
+    border-radius: 8px;
+    background: rgba(225, 67, 169, 0.12);
+    color: var(--ink);
+}
+
+.signup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+}
+
+.ticket-main .signup-actions .btn {
+    margin-top: 0;
+}
+
+.privacy {
+    font-size: 0.88rem;
+    color: var(--muted);
+}
+
+.signup-done {
+    display: grid;
+    gap: 0.6rem;
+    justify-items: start;
+}
+
+.signup-done:focus {
+    outline: none;
+}
+
+.signup-done p + p {
+    margin-top: 0;
+}
+
+.done-eyebrow {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cyan);
+}
+
+.done-tag {
+    font-family: var(--display);
+    font-size: clamp(1.4rem, 1rem + 2vw, 2.1rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.signup-done .signup-actions {
+    margin-top: 0.6rem;
+}
+
+.text-btn {
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.95rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.text-btn:hover {
+    color: var(--cyan);
+}
+
+.reg-links {
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+}
+
+.reg-links a:hover {
+    color: var(--cyan);
 }
 
 /* Newsletter */

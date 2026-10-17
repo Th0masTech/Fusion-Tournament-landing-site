@@ -1,0 +1,14 @@
+{
+  "name": "fusion-tournament-site",
+  "private": true,
+  "description": "Fusion Tournament site with sign-ups and a live double-elimination bracket",
+  "scripts": {
+    "build": "node scripts/build-static.mjs"
+  },
+  "dependencies": {
+    "@netlify/database": "^2.0.1"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
