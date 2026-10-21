@@ -3,9 +3,18 @@
    (browser) and the Netlify functions (server), so both agree on who plays whom, which
    results still count, the standings and the placings.
 
-   run({ format, settings, players: [{ id, name }] in seed order,
+   run({ format, settings, players: [{ id, name, late? }] in seed order,
          results: { matchId: { a, b, w, sa, sb, t } }, live: { matchId: { setup, t } } })
-   A result's w is the winner's id, or null for a draw (only where draws are allowed). */
+   A result's w is the winner's id, or null for a draw (only where draws are allowed).
+
+   Players with a `late` object joined after the bracket started. The structure (bracket
+   size, groups, round-robin schedule, Swiss rounds) still comes from the starting players,
+   and late entrants fit around it:
+     elimination  late.seed   an empty first-round spot (a seed that was a bye)
+     round robin  late.round  plays everyone already in, one match a round from that round
+     Swiss        late.round  paired from that round on, starting on 0 points
+     groups       late.group, late.round  joins that group, one match a round from that round
+   lateEntry(bracket) works out where a new player can go without undoing any result. */
 (function (root) {
     "use strict";
 
@@ -179,10 +188,13 @@
         return [pre + "Round " + r, c + "R" + r];
     }
 
-    // Structure of an elimination bracket for n entrants. double: losers side and grand
+    // Structure of an elimination bracket sized for n entrants. double: losers side and grand
     // final (reset optional); single: one bracket with an optional third-place match.
+    // opt.has(seed) says which seeds have a player (default: 1..n); every other seed is a bye.
     function elim(n, opt) {
         var dbl = !!opt.double;
+        var has = opt.has || function (s) { return s <= n; };
+        var entrants = opt.count == null ? n : opt.count;
         var S = Math.max(2, nextPow2(Math.max(n, 2)));
         var k = log2(S);
         var order = seedOrder(S);
@@ -257,7 +269,7 @@
         }
 
         function isBye(s) {
-            if (s.seed != null) { return s.seed > n; }
+            if (s.seed != null) { return !has(s.seed); }
             if (s.w) { return M[s.w].bye[0] && M[s.w].bye[1]; }
             return M[s.l].bye[0] || M[s.l].bye[1];
         }
@@ -276,9 +288,9 @@
         var lbPlace = {}, gone = 0;
         for (var lr = 1; lr <= LR; lr++) {
             gone += L[lr - 1].filter(function (id) { return !M[id].auto; }).length;
-            lbPlace[lr] = n - gone + 1;
+            lbPlace[lr] = entrants - gone + 1;
         }
-        return { n: n, S: S, k: k, LR: LR, double: dbl, M: M, W: W, L: L, gf: gf, final: final, third: third, seq: seq, lbPlace: lbPlace, labels: null };
+        return { n: entrants, S: S, k: k, LR: LR, double: dbl, has: has, M: M, W: W, L: L, gf: gf, final: final, third: third, seq: seq, lbPlace: lbPlace, labels: null };
     }
 
     // ---------- Shared match resolution ----------
@@ -337,7 +349,7 @@
     function resolveElim(ctx, el, entrant) {
         var out = ctx.out, M = ctx.M;
         function part(s) {
-            if (s.seed != null) { return s.seed > el.n ? { bye: true } : entrant(s.seed); }
+            if (s.seed != null) { return el.has(s.seed) ? entrant(s.seed) : { bye: true }; }
             var x = out[s.w || s.l];
             return x && x.done ? (s.w ? x.winner : x.loser) : null;
         }
@@ -504,13 +516,75 @@
         ctx.runnerUp = ctx.table[1].p;
     }
 
+    // ---------- Late entrants ----------
+    function isLate(p) { return !!(p && p.late && typeof p.late === "object"); }
+
+    // The late entrants this bracket can take, with their late info checked against the
+    // format. Anything that doesn't fit (a seed that isn't an empty spot, a group that
+    // doesn't exist) is left out rather than breaking the bracket.
+    function placeLate(pl, n0, list) {
+        var out = [], used = {};
+        var S = Math.max(2, nextPow2(Math.max(n0, 2)));
+        list.forEach(function (p) {
+            var l = p.late, q = null;
+            if (pl.format === "double" || pl.format === "single") {
+                var k = toInt(l.seed, 0);
+                if (k > n0 && k <= S && !used[k]) {
+                    used[k] = 1;
+                    q = { seed: k };
+                }
+            } else if (pl.format === "groups") {
+                var g = LETTERS.indexOf(String(l.group || ""));
+                if (g >= 0 && g < pl.groups) { q = { group: LETTERS[g], round: Math.max(1, toInt(l.round, 1)) }; }
+            } else {
+                q = { round: Math.max(1, toInt(l.round, 1)) };
+            }
+            if (q) { out.push({ id: p.id, name: p.name, late: q }); }
+        });
+        return out;
+    }
+
+    // Adds late entrants to a round-robin schedule (rounds of { a, b } player ids). Each
+    // plays everyone listed before them in `order`, one match a round from the round they
+    // joined, against someone who's free that round where possible. Rounds are added at the
+    // end when they run out. Earlier players' matches never move, so match ids stay stable.
+    function lateSchedule(rounds, order, late) {
+        late.forEach(function (L) {
+            var opp = order.slice(0, order.indexOf(L.id));
+            var r = Math.min(L.late.round - 1, rounds.length);
+            while (opp.length) {
+                if (!rounds[r]) { rounds[r] = []; }
+                var busy = {};
+                rounds[r].forEach(function (x) {
+                    busy[x.a] = 1;
+                    busy[x.b] = 1;
+                });
+                var k = 0;
+                for (var j = 0; j < opp.length; j++) {
+                    if (!busy[opp[j]]) {
+                        k = j;
+                        break;
+                    }
+                }
+                rounds[r].push({ a: opp.splice(k, 1)[0], b: L.id, late: L.id });
+                r++;
+            }
+        });
+        return rounds;
+    }
+
     // ---------- Formats ----------
     function runElim(ctx) {
-        var pl = ctx.plan;
-        var el = elim(ctx.N, { double: pl.format === "double", reset: pl.reset, third: pl.third });
+        var pl = ctx.plan, bySeed = {};
+        ctx.initial.forEach(function (p, i) { bySeed[i + 1] = p.id; });
+        ctx.late.forEach(function (p) { bySeed[p.late.seed] = p.id; });
+        var el = elim(ctx.N0, {
+            double: pl.format === "double", reset: pl.reset, third: pl.third,
+            has: function (s) { return !!bySeed[s]; }, count: ctx.N
+        });
         el.seq.forEach(function (id) { add(ctx, el.M[id]); });
         ctx.el = el;
-        resolveElim(ctx, el, function (k) { return { p: ctx.players[k - 1].id }; });
+        resolveElim(ctx, el, function (k) { return { p: bySeed[k] }; });
         var res = elimPlaces(ctx, el);
         ctx.place = res.place;
         ctx.champion = res.champion;
@@ -519,26 +593,33 @@
 
     function runRoundRobin(ctx) {
         var pl = ctx.plan, ids = [];
-        ctx.rounds = rrRounds(ctx.N).map(function (pairs, r) {
+        var sched = rrRounds(ctx.N0).map(function (pairs) {
+            return pairs.map(function (pr, i) { return { a: ctx.initial[pr[0]].id, b: ctx.initial[pr[1]].id, i: i + 1 }; });
+        });
+        var baseRounds = sched.length;
+        lateSchedule(sched, ctx.players.map(function (p) { return p.id; }), ctx.late);
+        ctx.rounds = sched.map(function (list, r) {
             var round = { n: r + 1, name: "Round " + (r + 1), ids: [], rest: null, paired: true };
-            var seen = {};
-            pairs.forEach(function (pr, i) {
-                var id = "r" + (r + 1) + "-" + (i + 1);
+            var playing = {};
+            list.forEach(function (x) {
+                var id = "r" + (r + 1) + "-" + (x.late ? "L" + x.late : x.i);
                 var m = { id: id, stage: "rr", round: r + 1, name: "Round " + (r + 1), short: "R" + (r + 1), draws: pl.draws };
                 add(ctx, m);
                 var o = blank(id);
                 ctx.out[id] = o;
-                o.slots = [{ p: ctx.players[pr[0]].id }, { p: ctx.players[pr[1]].id }];
+                o.slots = [{ p: x.a }, { p: x.b }];
                 settle(ctx, o, m);
                 round.ids.push(id);
                 ids.push(id);
-                seen[pr[0]] = 1;
-                seen[pr[1]] = 1;
+                playing[x.a] = 1;
+                playing[x.b] = 1;
             });
-            if (ctx.N % 2) {
-                for (var i = 0; i < ctx.N; i++) {
-                    if (!seen[i]) {
-                        round.rest = ctx.players[i].id;
+            // With an odd number of starting players, one of them sits each round out
+            // (unless a late entrant plays them that round).
+            if (r < baseRounds && ctx.N0 % 2) {
+                for (var i = 0; i < ctx.N0; i++) {
+                    if (!playing[ctx.initial[i].id]) {
+                        round.rest = ctx.initial[i].id;
                         break;
                     }
                 }
@@ -596,28 +677,34 @@
         return pairs;
     }
 
+    // Who gets the bye: the lowest-ranked player who hasn't had one. Late entrants have
+    // already sat rounds out, so they only get it once nobody else is left.
+    function byeIndex(order, byes, from) {
+        var j;
+        for (j = order.length - 1; j >= 0; j--) { if (!byes[order[j]] && from[order[j]] === 1) { return j; } }
+        for (j = order.length - 1; j >= 0; j--) { if (!byes[order[j]]) { return j; } }
+        return order.length - 1;
+    }
+
     function runSwiss(ctx) {
-        var pl = ctx.plan, N = ctx.N, per = Math.floor(N / 2);
-        var ids = [], played = {}, byes = {}, open = N >= 2;
+        var pl = ctx.plan;
+        var ids = [], played = {}, byes = {}, from = {}, open = ctx.N0 >= 2;
+        ctx.players.forEach(function (p) { from[p.id] = isLate(p) ? p.late.round : 1; });
         ctx.rounds = [];
         for (var r = 1; r <= pl.rounds; r++) {
-            var round = { n: r, name: "Round " + r, ids: [], bye: null, paired: false };
+            var active = ctx.players.filter(function (p) { return from[p.id] <= r; }).map(function (p) { return p.id; });
+            var per = Math.floor(active.length / 2);
+            var round = {
+                n: r, name: "Round " + r, ids: [], bye: null, paired: false,
+                joined: ctx.late.filter(function (p) { return p.late.round === r; }).map(function (p) { return p.id; })
+            };
             var pairs = null;
             if (open) {
                 var pts = points(ctx, ids, byes);
-                var order = ctx.players.map(function (p) { return p.id; }).sort(function (x, y) {
+                var order = active.sort(function (x, y) {
                     return pts[y] - pts[x] || ctx.P[x].seed - ctx.P[y].seed;
                 });
-                if (order.length % 2) {
-                    var bi = order.length - 1;
-                    for (var j = order.length - 1; j >= 0; j--) {
-                        if (!byes[order[j]]) {
-                            bi = j;
-                            break;
-                        }
-                    }
-                    round.bye = order.splice(bi, 1)[0];
-                }
+                if (order.length % 2) { round.bye = order.splice(byeIndex(order, byes, from), 1)[0]; }
                 pairs = r === 1 ? fold(order) : pairSwiss(order, played);
                 round.paired = true;
             }
@@ -678,25 +765,37 @@
 
     function runGroups(ctx) {
         var pl = ctx.plan, A = pl.advance;
-        var sched = pl.members.map(function (mem) { return rrRounds(mem.length); });
         ctx.groups = pl.members.map(function (mem, g) {
             return {
                 key: LETTERS[g], name: "Group " + LETTERS[g],
-                players: mem.map(function (i) { return ctx.players[i].id; }),
+                players: mem.map(function (i) { return ctx.initial[i].id; }),
                 ids: [], table: [], done: false
             };
+        });
+        var lateIn = ctx.groups.map(function () { return []; });
+        ctx.late.forEach(function (p) {
+            var g = LETTERS.indexOf(p.late.group);
+            ctx.groups[g].players.push(p.id);
+            lateIn[g].push(p);
+        });
+        var sched = ctx.groups.map(function (grp, g) {
+            var mem = pl.members[g];
+            var base = rrRounds(mem.length).map(function (pairs) {
+                return pairs.map(function (pr, i) { return { a: grp.players[pr[0]], b: grp.players[pr[1]], i: i + 1 }; });
+            });
+            return lateSchedule(base, grp.players, lateIn[g]);
         });
         var maxR = 0;
         sched.forEach(function (s) { maxR = Math.max(maxR, s.length); });
         for (var r = 0; r < maxR; r++) {
             ctx.groups.forEach(function (grp, g) {
-                (sched[g][r] || []).forEach(function (pr, i) {
-                    var id = "g" + grp.key + (r + 1) + "-" + (i + 1);
+                (sched[g][r] || []).forEach(function (x) {
+                    var id = "g" + grp.key + (r + 1) + "-" + (x.late ? "L" + x.late : x.i);
                     var m = { id: id, stage: "group", group: grp.key, round: r + 1, name: grp.name + " · Round " + (r + 1), short: grp.key + (r + 1), draws: pl.draws };
                     add(ctx, m);
                     var o = blank(id);
                     ctx.out[id] = o;
-                    o.slots = [{ p: grp.players[pr[0]] }, { p: grp.players[pr[1]] }];
+                    o.slots = [{ p: x.a }, { p: x.b }];
                     settle(ctx, o, m);
                     grp.ids.push(id);
                 });
@@ -733,8 +832,9 @@
 
         // Players knocked out in the groups share a place with everyone who finished in
         // the same position of their group.
-        var tierStart = {}, next = Q + 1;
-        for (var t = A + 1; t <= pl.maxSize; t++) {
+        var tierStart = {}, next = Q + 1, biggest = 0;
+        ctx.groups.forEach(function (grp) { biggest = Math.max(biggest, grp.players.length); });
+        for (var t = A + 1; t <= biggest; t++) {
             tierStart[t] = next;
             ctx.groups.forEach(function (grp) { if (grp.players.length >= t) { next++; } });
         }
@@ -796,19 +896,25 @@
             // match can still be on after the final).
             complete: !!ctx.champion && done.length >= counted,
             place: ctx.place || {}, rec: rec, total: counted, done: done.length,
-            live: live, ready: ready, next: next, recent: recent,
+            live: live, ready: ready, next: next, recent: recent, late: ctx.late, started: ctx.N0,
             stale: ctx.stale, staleLive: staleLive, gf2Needed: !!ctx.gf2Needed
         };
     }
 
     function run(b) {
         b = b || {};
-        var players = (b.players || []).filter(function (p) { return p && p.id; });
-        var pl = plan(b.format, b.settings, players.length);
+        var all = (b.players || []).filter(function (p) { return p && p.id; });
+        var initial = all.filter(function (p) { return !isLate(p); });
+        // The bracket's shape comes from the players it started with.
+        var pl = plan(b.format, b.settings, initial.length);
+        var late = placeLate(pl, initial.length, all.filter(isLate));
+        var players = initial.concat(late);
         var P = {};
-        players.forEach(function (p, i) { P[p.id] = { id: p.id, name: p.name, seed: i + 1 }; });
+        initial.forEach(function (p, i) { P[p.id] = { id: p.id, name: p.name, seed: i + 1, late: false }; });
+        late.forEach(function (p, k) { P[p.id] = { id: p.id, name: p.name, seed: p.late.seed || initial.length + k + 1, late: true }; });
         var ctx = {
-            format: pl.format, plan: pl, players: players, N: players.length, P: P,
+            format: pl.format, plan: pl, players: players, initial: initial, late: late,
+            N: players.length, N0: initial.length, P: P,
             R: b.results || {}, LV: b.live || {}, M: {}, seq: [], out: {}, stale: [],
             el: null, rounds: null, table: null, groups: null, byes: {}, place: {}
         };
@@ -849,9 +955,142 @@
         return null;
     }
 
+    // ---------- Adding a player after the start ----------
+    var NEW = "__new__";
+
+    // Where one more player could go in a running bracket without undoing a result or a
+    // call to a setup. Returns { ok: true, late, text } (late is what to store on the new
+    // player) or { ok: false, reason }. For groups, `groups` lists each group and whether it
+    // can take them; opts.group picks one (default: the smallest group that can).
+    function lateEntry(b, opts) {
+        opts = opts || {};
+        var D = run(b), f = D.format;
+        var res = { ok: false, reason: "", late: null, text: "", groups: null, group: null };
+        if (D.players.length < 2) {
+            res.reason = "The bracket needs to be running first.";
+            return res;
+        }
+        if (D.complete) {
+            res.reason = "This tournament is already over.";
+            return res;
+        }
+        function attempt(late) {
+            var D2 = run({
+                format: b.format, settings: b.settings, results: b.results || {}, live: b.live || {},
+                players: (b.players || []).concat([{ id: NEW, name: "New player", late: late }])
+            });
+            if (!D2.P[NEW]) { return null; }
+            var undone = D.recent.some(function (id) { return !D2.out[id] || D2.out[id].status !== "done"; });
+            var uncalled = D.live.some(function (id) { return !D2.out[id] || D2.out[id].status !== "live"; });
+            return undone || uncalled ? null : D2;
+        }
+        function firstUnplayed(rounds) {
+            for (var i = 0; i < rounds.length; i++) {
+                if (rounds[i].ids.some(function (id) { return !D.out[id].done; })) { return rounds[i].n; }
+            }
+            return 0;
+        }
+
+        if (f === "double" || f === "single") {
+            var taken = {}, open = 0;
+            D.players.forEach(function (p) { taken[D.P[p.id].seed] = 1; });
+            for (var k = D.started + 1; k <= D.el.S; k++) {
+                if (taken[k]) { continue; }
+                open++;
+                var D2 = attempt({ seed: k });
+                if (!D2) { continue; }
+                var mid = nextFor(D2, NEW), o = mid ? D2.out[mid] : null;
+                var other = o ? (o.slots[0] && o.slots[0].p === NEW ? o.slots[1] : o.slots[0]) : null;
+                res.ok = true;
+                res.late = { seed: k };
+                res.text = "Goes in as seed " + k + "." + (o ? " First match: " + D2.M[mid].name +
+                    (other && other.p ? " against " + D2.P[other.p].name + " (seed " + D2.P[other.p].seed + ")" : "") + "." : "");
+                return res;
+            }
+            res.reason = open
+                ? "Too late: putting someone in an empty spot now would undo matches that have already been played."
+                : "The bracket is full: all " + D.el.S + " spots are taken.";
+            return res;
+        }
+
+        if (f === "roundrobin") {
+            var from = firstUnplayed(D.rounds), D3 = from ? attempt({ round: from }) : null;
+            if (!D3) {
+                res.reason = "There’s no round left to fit them into.";
+                return res;
+            }
+            var mine = D3.seq.filter(function (id) { return D3.out[id].slots[1].p === NEW; }).length;
+            var extra = D3.rounds.length - D.rounds.length;
+            res.ok = true;
+            res.late = { round: from };
+            res.text = "Plays everyone (" + count(mine, "match", "matches") + "), one a round from round " + from + "." +
+                (extra > 0 ? " That adds " + count(extra, "round", "rounds") + " at the end." : "");
+            return res;
+        }
+
+        if (f === "swiss") {
+            var join = 0;
+            for (var r = 0; r < D.rounds.length && !join; r++) {
+                var started = D.rounds[r].ids.some(function (id) { return D.out[id].done || D.out[id].status === "live"; });
+                if (!started) { join = D.rounds[r].n; }
+            }
+            if (!join) {
+                res.reason = "The last round has already started. Add a round in Bracket settings first.";
+                return res;
+            }
+            if (!attempt({ round: join })) {
+                res.reason = "They can’t join without undoing a result.";
+                return res;
+            }
+            res.ok = true;
+            res.late = { round: join };
+            res.text = "Joins in round " + join + " on 0 points." +
+                (D.rounds[join - 1].paired ? " Round " + join + " gets paired again to fit them in." : "");
+            return res;
+        }
+
+        // Groups: any group whose knockout places aren't in use yet.
+        var list = D.groups.map(function (grp) {
+            var first = firstUnplayed(groupRounds(D, grp)), last = 0;
+            grp.ids.forEach(function (id) { last = Math.max(last, D.M[id].round); });
+            var at = first || last + 1;
+            return { key: grp.key, name: grp.name, size: grp.players.length, done: grp.done, round: at, ok: !!attempt({ group: grp.key, round: at }) };
+        });
+        res.groups = list.map(function (x) { return { key: x.key, name: x.name, size: x.size, ok: x.ok }; });
+        var pick = null;
+        list.forEach(function (x) { if (x.ok && (!pick || x.size < pick.size)) { pick = x; } });
+        var want = list.filter(function (x) { return x.key === opts.group; })[0];
+        if (want && !want.ok) {
+            res.reason = "Too late for " + want.name + ": its players have already played in the knockout.";
+            return res;
+        }
+        if (want) { pick = want; }
+        if (!pick) {
+            res.reason = "Too late: the knockout has already started.";
+            return res;
+        }
+        res.ok = true;
+        res.group = pick.key;
+        res.late = { group: pick.key, round: pick.round };
+        res.text = "Joins " + pick.name + " and plays its " + count(pick.size, "other player", "other players") + "." +
+            (pick.done ? " " + pick.name + " had finished, so its knockout places wait for these matches." : "");
+        return res;
+    }
+    // A group's matches as rounds, for finding where a late entrant starts.
+    function groupRounds(D, grp) {
+        var rounds = [];
+        grp.ids.forEach(function (id) {
+            var r = D.M[id].round;
+            if (!rounds[r - 1]) { rounds[r - 1] = { n: r, ids: [] }; }
+            rounds[r - 1].ids.push(id);
+        });
+        return rounds.filter(Boolean);
+    }
+
     var Engine = {
         FORMATS: FORMATS, FORMAT_NAMES: FORMAT_NAMES,
-        plan: plan, run: run, slotLabel: slotLabel, nextFor: nextFor, ordinal: ordinal, seedOrder: seedOrder
+        plan: plan, run: run, slotLabel: slotLabel, nextFor: nextFor, ordinal: ordinal, seedOrder: seedOrder,
+        lateEntry: lateEntry
     };
     if (typeof module === "object" && module.exports) { module.exports = Engine; }
     root.FusionEngine = Engine;

@@ -153,7 +153,7 @@ const iso = (t) => (t ? new Date(t).toISOString() : null);
 export async function loadState(client) {
   const meta = (await client.query("SELECT rev, updated_at FROM meta WHERE id = 1")).rows[0] || { rev: 0, updated_at: null };
   const brackets = (await client.query(
-    "SELECT game, name, color, status, format, settings, seeds, started_at FROM brackets ORDER BY sort, game"
+    "SELECT game, name, color, status, format, settings, seeds, late, started_at FROM brackets ORDER BY sort, game"
   )).rows;
   const tags = (await client.query("SELECT id, tag FROM players")).rows;
   const entries = (await client.query(
@@ -177,6 +177,8 @@ export async function loadState(client) {
       });
       const live = {};
       calls.filter((c) => c.game === b.game).forEach((c) => { live[c.match_id] = { setup: c.setup, t: iso(c.t) }; });
+      // Where each late entrant joined the running bracket (only while it's live).
+      const late = b.status === "live" && b.late && typeof b.late === "object" ? b.late : {};
       return {
         game: b.game,
         name: b.name,
@@ -185,7 +187,7 @@ export async function loadState(client) {
         format: Engine.FORMATS.includes(b.format) ? b.format : "double",
         settings: b.settings && typeof b.settings === "object" ? b.settings : {},
         startedAt: iso(b.started_at),
-        players: ids.map((id) => ({ id, tag: tagOf[id] || "?" })),
+        players: ids.map((id) => (late[id] ? { id, tag: tagOf[id] || "?", late: late[id] } : { id, tag: tagOf[id] || "?" })),
         results: b.status === "live" ? res : {},
         live: b.status === "live" ? live : {},
       };
@@ -198,7 +200,7 @@ export function engineBracket(publicBracket) {
   return {
     format: publicBracket.format,
     settings: publicBracket.settings,
-    players: publicBracket.players.map((p) => ({ id: p.id, name: p.tag })),
+    players: publicBracket.players.map((p) => (p.late ? { id: p.id, name: p.tag, late: p.late } : { id: p.id, name: p.tag })),
     results: publicBracket.results,
     live: publicBracket.live,
   };

@@ -2240,6 +2240,30 @@ html.fx-is-big body {
     font-size: 1.3rem;
 }
 
+/* Where a late entrant goes (or why they can't join) */
+.fx-late-where {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--fx-line-2);
+    border-radius: 10px;
+    background: var(--night-deep);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.fx-late-where.bad {
+    border-color: var(--fx-live);
+    background: var(--fx-live-soft);
+    font-weight: 400;
+}
+
+.fx-late-where .ic {
+    margin-top: 0.2rem;
+    color: var(--fx-live);
+}
+
 .fx-empty {
     display: grid;
     justify-items: start;

@@ -168,6 +168,50 @@ async function runOp(body) {
           .catch(uniqueTag(`“${tag}” is already in ${br.name}.`));
         break;
       }
+      case "late": {
+        // Someone joins after the bracket started: a new walk-in (tag) or someone already
+        // on the list (playerId), e.g. signed up for another game or removed before the start.
+        needLive();
+        const seeds = Array.isArray(br.seeds) ? br.seeds.map(String) : [];
+        if (seeds.length >= MAX_PLAYERS) throw new HttpError(409, `${br.name} is full.`);
+        let pid, tag, known = null;
+        if (body.playerId) {
+          pid = String(body.playerId);
+          known = (await client.query("SELECT id, tag FROM players WHERE id = $1", [pid])).rows[0];
+          if (!known) throw new HttpError(404, "That player isn't on the list.");
+          tag = known.tag;
+          if (seeds.includes(pid)) throw new HttpError(409, `${tag} is already in ${br.name}.`);
+        } else {
+          tag = cleanText(body.tag, 24);
+          if (tag.length < 2) throw new HttpError(400, "Gamer tags need at least 2 characters.");
+          pid = newId("p");
+        }
+        const pb = (await loadState(client)).brackets.find((b) => b.game === game);
+        if (pb.players.some((p) => tagKey(p.tag) === tagKey(tag))) throw new HttpError(409, `“${tag}” is already in ${br.name}.`);
+        // The engine decides where they fit without undoing anything already played.
+        const entry = Engine.lateEntry(engineBracket(pb), { group: body.group ? String(body.group) : undefined });
+        if (!entry.ok) throw new HttpError(409, entry.reason);
+        if (known) {
+          if (body.paid) await client.query("UPDATE players SET paid = TRUE WHERE id = $1", [pid]);
+        } else {
+          await client.query(
+            "INSERT INTO players (id, tag, real_name, source, paid) VALUES ($1, $2, $3, 'walk-in', $4)",
+            [pid, tag, cleanText(body.name, 60) || null, !!body.paid]
+          );
+        }
+        await client.query(
+          `INSERT INTO entries (game, player_id, tag_key) VALUES ($1, $2, $3)
+           ON CONFLICT (game, player_id) DO UPDATE SET removed = FALSE, tag_key = EXCLUDED.tag_key`,
+          [game, pid, tagKey(tag)]
+        ).catch(uniqueTag(`“${tag}” is already in ${br.name}.`));
+        await client.query(
+          "UPDATE brackets SET seeds = seeds || to_jsonb($2::text), late = late || jsonb_build_object($2::text, $3::jsonb) WHERE game = $1",
+          [game, pid, JSON.stringify(entry.late)]
+        );
+        await pruneStale(client, game);
+        created = pid;
+        break;
+      }
       case "seed": {
         needSetup();
         const order = Array.isArray(body.order) ? body.order.map(String).slice(0, 500) : [];
@@ -185,7 +229,7 @@ async function runOp(body) {
         await client.query("DELETE FROM results WHERE game = $1", [game]);
         await client.query("DELETE FROM calls WHERE game = $1", [game]);
         await client.query(
-          "UPDATE brackets SET status = 'live', seeds = $2::jsonb, started_at = NOW() WHERE game = $1", [game, JSON.stringify(ids)]
+          "UPDATE brackets SET status = 'live', seeds = $2::jsonb, late = '{}'::jsonb, started_at = NOW() WHERE game = $1", [game, JSON.stringify(ids)]
         );
         break;
       }
@@ -196,7 +240,8 @@ async function runOp(body) {
         if (ids.length) await client.query(SET_SEEDS, [game, ids]);
         await client.query("DELETE FROM results WHERE game = $1", [game]);
         await client.query("DELETE FROM calls WHERE game = $1", [game]);
-        await client.query("UPDATE brackets SET status = 'setup', seeds = '[]'::jsonb, started_at = NULL WHERE game = $1", [game]);
+        // Late entrants stay signed up, at the bottom of the seed list.
+        await client.query("UPDATE brackets SET status = 'setup', seeds = '[]'::jsonb, late = '{}'::jsonb, started_at = NULL WHERE game = $1", [game]);
         break;
       }
       case "result":

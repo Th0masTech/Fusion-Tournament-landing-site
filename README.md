@@ -51,6 +51,21 @@ Organizers sign in on the Bracket page with a shared password. From there they c
   walk-ins, and set or shuffle the seeds.
 - **Run the event.** **Start bracket** closes sign-ups for that game. After that, tap a match to call it to a
   setup or report the result and score.
+- **Add a late player.** **Add a player** works after the start too, for a new walk-in or someone already on
+  the list (signed up for another game, or removed before the start). Nothing already played changes. The
+  dialog shows where they'll go before you confirm:
+  - **Single or double elimination:** an empty first-round spot (a bye), as long as the player in that spot
+    hasn't played their next match yet. Once there's no such spot, the dialog says the bracket is full or
+    that it's too late.
+  - **Round robin:** they play everyone, one match a round from the current round. Extra rounds are added
+    at the end if needed.
+  - **Swiss:** they join the next round that hasn't started, on 0 points. If that round is already paired
+    but nothing has been played in it yet, it's paired again with them in.
+  - **Groups, then knockout:** pick their group (the smallest by default). Any group whose players haven't
+    reached the knockout yet can take them.
+
+  The public sign-up form stays closed for games that have started, so late players always go through an
+  organizer.
 
 Every screen with the Bracket page open updates within a few seconds. **Big screen** gives the venue TV a now
 playing / up next / standings / latest results view, and `bracket.html#big` opens straight into it.

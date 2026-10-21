@@ -81,7 +81,7 @@
                 return {
                     id: b.game, name: b.name, color: b.color || "pink", status: b.status,
                     format: b.format || "double", settings: obj(b.settings), startedAt: b.startedAt,
-                    players: (b.players || []).map(function (p) { return { id: p.id, name: p.tag }; }),
+                    players: (b.players || []).map(function (p) { return p.late ? { id: p.id, name: p.tag, late: p.late } : { id: p.id, name: p.tag }; }),
                     results: obj(b.results), live: obj(b.live)
                 };
             })
@@ -253,6 +253,9 @@
                 return;
             }
             var D = derive(b), PD = Engine.run(pb);
+            D.late.forEach(function (p) {
+                if (!PD.P[p.id]) { msgs.push([p.name + " joined " + b.name + " late.", ""]); }
+            });
             D.recent.forEach(function (id) {
                 var o = D.out[id], po = PD.out[id];
                 var before = po && po.status === "done" ? resultSig(po) : null;
@@ -451,8 +454,9 @@
         }).join("");
         var zoom = v === "bracket"
             ? '<div class="fx-zoom" role="group" aria-label="Bracket zoom"><button type="button" class="fx-icon-btn" data-act="zoom" data-d="-1" aria-label="Zoom out">−</button><span>' + Math.round(zoomVal() * 100) + '%</span><button type="button" class="fx-icon-btn" data-act="zoom" data-d="1" aria-label="Zoom in">+</button></div>' : "";
+        var add = isTO() && !D.complete ? '<button type="button" class="fx-btn sm" data-act="late-open">' + ICON.plus + "Add a player</button>" : "";
         return '<div class="fx-tools"><div class="fx-seg" role="tablist" aria-label="View">' + seg + "</div>" +
-            '<label class="fx-follow" for="fx-follow-' + esc(b.id) + '"><span class="fx-sr">Follow a player</span><select id="fx-follow-' + esc(b.id) + '" data-follow="' + esc(b.id) + '">' + opts + "</select></label>" + zoom + "</div>";
+            '<label class="fx-follow" for="fx-follow-' + esc(b.id) + '"><span class="fx-sr">Follow a player</span><select id="fx-follow-' + esc(b.id) + '" data-follow="' + esc(b.id) + '">' + opts + "</select></label>" + add + zoom + "</div>";
     }
 
     // ---------- Bracket canvas (elimination formats and the groups knockout) ----------
@@ -605,7 +609,8 @@
             var body = !r.paired
                 ? '<p class="fx-muted">Pairings come out when round ' + (r.n - 1) + " finishes.</p>"
                 : '<div class="fx-ml-list">' + r.ids.map(function (id) { return listRowHTML(b, D, id, { noRound: true }); }).join("") + "</div>";
-            var extra = r.bye ? '<p class="fx-hint">Bye: ' + esc(D.P[r.bye].name) + " (counts as a win)</p>" : r.rest ? '<p class="fx-hint">' + esc(D.P[r.rest].name) + " sits this round out</p>" : "";
+            var extra = (r.joined && r.joined.length ? '<p class="fx-hint">Joining this round: ' + esc(r.joined.map(function (p) { return D.P[p].name; }).join(", ")) + "</p>" : "") +
+                (r.bye ? '<p class="fx-hint">Bye: ' + esc(D.P[r.bye].name) + " (counts as a win)</p>" : r.rest ? '<p class="fx-hint">' + esc(D.P[r.rest].name) + " sits this round out</p>" : "");
             return '<section><h3 class="fx-sec-h">' + esc(r.name) + ' <span class="fx-chip' + (done ? " on" : "") + '">' + tag + "</span></h3>" + body + extra + "</section>";
         }).join("") + "</div>";
     }
@@ -646,7 +651,7 @@
         var body = rows.map(function (r) {
             var cls = (opt.advance && r.rank <= opt.advance ? "adv" : "") + (ui.follow[b.id] === r.p ? " is-follow" : "") + (crownTop && r.rank === 1 ? " p1" : "");
             return '<tr class="' + cls.trim() + '"><td class="rk num">' + r.rank + '</td><td class="pn">' + (crownTop && r.rank === 1 ? ICON.crown + " " : "") + esc(D.P[r.p].name) +
-                (r.byes ? ' <span class="fx-tag-src">Bye</span>' : "") + "</td>" +
+                (r.byes ? ' <span class="fx-tag-src">Bye</span>' : "") + (D.P[r.p].late ? ' <span class="fx-tag-src">Late</span>' : "") + "</td>" +
                 '<td class="num col-played">' + r.played + '</td><td class="num">' + (draws ? r.w + "–" + r.d + "–" + r.l : r.w + "–" + r.l) + "</td>" +
                 (draws ? '<td class="num strong">' + r.pts + "</td>" : "") +
                 (scores ? '<td class="num">' + (r.diff > 0 ? "+" : "") + r.diff + "</td>" : "") +
@@ -809,10 +814,10 @@
             '<input class="fx-inp" id="' + esc(id) + '" maxlength="40" value="' + esc(b.name) + '"><button type="submit" class="fx-btn sm">Rename</button></form>' +
             '<div class="fx-swatches" role="group" aria-label="Colour">' + swatches + "</div>" + del + "</section>";
     }
-    function namesSectionHTML(players) {
+    function namesSectionHTML(players, D) {
         if (!players.length) { return ""; }
         return '<section><h4>Fix a gamer tag</h4><p class="fx-hint">Seeds and results stay as they are.</p><div class="fx-nm-list">' + players.map(function (p, i) {
-            return '<label class="fx-nm-edit" for="fx-pn-' + esc(p.id) + '"><span>' + (i + 1) + '</span><input class="fx-inp" id="fx-pn-' + esc(p.id) + '" data-pid="' + esc(p.id) + '" data-was="' + esc(p.name) + '" value="' + esc(p.name) + '" maxlength="24" autocomplete="off"></label>';
+            return '<label class="fx-nm-edit" for="fx-pn-' + esc(p.id) + '"><span>' + (D ? D.P[p.id].seed : i + 1) + '</span><input class="fx-inp" id="fx-pn-' + esc(p.id) + '" data-pid="' + esc(p.id) + '" data-was="' + esc(p.name) + '" value="' + esc(p.name) + '" maxlength="24" autocomplete="off"></label>';
         }).join("") + '</div><div><button type="button" class="fx-btn sm" data-act="save-names">Save tags</button></div></section>';
     }
     function detailsHTML(key, title, sections) {
@@ -858,7 +863,7 @@
 
     // ---------- Organizer: settings while a bracket runs ----------
     function liveSettingsHTML(b, D) {
-        var sections = [namesSectionHTML(D.players)];
+        var sections = [namesSectionHTML(D.players, D)];
         if (b.format === "double" || (b.format === "groups" && D.plan.ko === "double")) {
             var gfDone = D.out.GF1 && D.out.GF1.status === "done";
             sections.push("<section><h4>Grand Final</h4>" + checkHTML(b, "reset", D.plan.reset, "Bracket reset: if the losers-side finalist wins the Grand Final, they play one more match", gfDone) +
@@ -971,6 +976,90 @@
         var inp = document.getElementById(kind === "signin" ? "fx-key" : "fx-new-game");
         if (inp) { inp.focus(); }
     }
+    // Adding someone after the start: the engine works out where they fit (an empty spot,
+    // the next round, or a group) without undoing anything already played.
+    function openLate() {
+        var b = cur();
+        if (!b || !isTO() || b.status !== "live") { return; }
+        ui.modal = { kind: "late", g: b.id, who: "", group: null, tag: "", paid: false, error: "", back: document.activeElement };
+        renderModal();
+        if (!PLAYERS) {
+            // The sign-up list fills the "Who" picker; show it once it arrives (unless they've started typing).
+            admin("players", "GET").then(function (res) {
+                PLAYERS = res.players;
+                var M2 = ui.modal;
+                if (M2 && M2.kind === "late" && !M2.tag) {
+                    renderModal();
+                    var again = document.getElementById("fx-late-tag");
+                    if (again) { again.focus(); }
+                }
+            }).catch(function () {});
+        }
+        var inp = document.getElementById("fx-late-tag");
+        if (inp) { inp.focus(); }
+    }
+    function lateEntryFor(b, group) { return Engine.lateEntry(b, { group: group || undefined }); }
+    function lateWhereHTML(e) {
+        return '<div class="fx-late-where' + (e.ok ? "" : " bad") + '" id="fx-late-where" aria-live="polite">' + (e.ok ? "" : ICON.warn) + "<span>" + esc(e.ok ? e.text : e.reason) + "</span></div>";
+    }
+    // People already on the list who aren't in this bracket (other games, or removed before the start).
+    function lateCandidates(b) {
+        var inIt = {};
+        b.players.forEach(function (p) { inIt[p.id] = 1; });
+        return (PLAYERS || []).filter(function (p) { return !inIt[p.id]; }).sort(function (x, y) { return x.tag.localeCompare(y.tag); });
+    }
+    function lateHTML(M) {
+        var b = byId(M.g), e = lateEntryFor(b, M.group);
+        var known = lateCandidates(b);
+        var who = known.length ? '<label class="fx-lbl" for="fx-late-who">Who</label><select class="fx-inp" id="fx-late-who"><option value="">Someone new</option>' + known.map(function (p) {
+            return '<option value="' + esc(p.id) + '"' + (M.who === p.id ? " selected" : "") + ">" + esc(p.tag + (p.name ? " · " + p.name : "")) + "</option>";
+        }).join("") + "</select>" : "";
+        var tag = M.who ? "" : '<label class="fx-lbl" for="fx-late-tag">Gamer tag</label><input class="fx-inp" id="fx-late-tag" maxlength="24" value="' + esc(M.tag) + '" autocomplete="off">';
+        var group = e.groups ? '<label class="fx-lbl" for="fx-late-group">Group</label><select class="fx-inp" id="fx-late-group">' + e.groups.map(function (x) {
+            return '<option value="' + esc(x.key) + '"' + ((M.group || e.group) === x.key ? " selected" : "") + (x.ok ? "" : " disabled") + ">" +
+                esc(x.name + " · " + count(x.size, "player", "players") + (x.ok ? "" : " · too late")) + "</option>";
+        }).join("") + "</select>" : "";
+        return '<div class="fx-scrim" data-act="scrim" style="--gc:' + gc(b) + '"><form class="fx-modal" role="dialog" aria-modal="true" aria-labelledby="fx-dlg-title" data-form="late" autocomplete="off">' +
+            '<div class="fx-m-head"><div><p class="fx-eyebrow">' + esc(b.name) + " · " + esc(formatName(b.format)) + '</p><h2 id="fx-dlg-title">Add a player</h2></div><button type="button" class="fx-icon-btn" data-act="close-modal" aria-label="Close">×</button></div>' +
+            '<div class="fx-m-body">' + who + tag + group +
+            '<label class="fx-check" for="fx-late-paid"><input type="checkbox" id="fx-late-paid"' + (M.paid ? " checked" : "") + "><span>Paid for their ticket</span></label>" +
+            lateWhereHTML(e) + (M.error ? '<p class="fx-m-err" role="alert">' + esc(M.error) + "</p>" : "") +
+            '<p class="fx-hint">Everything already played stays as it is.</p></div>' +
+            '<div class="fx-m-foot"><span class="sp"></span><button type="button" class="fx-btn" data-act="close-modal">Cancel</button><button type="submit" class="fx-btn primary" id="fx-dlg-go"' + (e.ok ? "" : " disabled") + ">Add player</button></div></form></div>";
+    }
+    function syncLate() {
+        var M = ui.modal, b = M && byId(M.g);
+        if (!b) { return; }
+        var e = lateEntryFor(b, M.group);
+        var w = document.getElementById("fx-late-where"); if (w) { w.outerHTML = lateWhereHTML(e); }
+        var go = document.getElementById("fx-dlg-go"); if (go) { go.disabled = !e.ok; }
+    }
+    function addLate() {
+        var M = ui.modal, b = byId(M.g);
+        var known = M.who ? lateCandidates(b).filter(function (p) { return p.id === M.who; })[0] : null;
+        var tag = known ? known.tag : M.tag.replace(/\s+/g, " ").trim();
+        if (!known && tag.length < 2) { dialogError("Gamer tags need at least 2 characters.", "fx-late-tag"); return; }
+        var clash = b.players.some(function (p) { return p.name.toLowerCase() === tag.toLowerCase(); });
+        if (clash) { dialogError("“" + tag + "” is already in " + b.name + ".", known ? "fx-late-who" : "fx-late-tag"); return; }
+        var btn = document.getElementById("fx-dlg-go");
+        if (btn) { btn.disabled = true; btn.textContent = "Adding…"; }
+        var shown = lateEntryFor(b, M.group);
+        var body = { op: "late", game: b.id, group: M.group || shown.group || undefined, paid: M.paid };
+        if (known) { body.playerId = known.id; } else { body.tag = tag; }
+        admin("op", "POST", body).then(function (res) {
+            if (res.players) { PLAYERS = res.players; }
+            closeModal();
+            applyState(res.state, true);
+            render();
+            var nb = byId(b.id), D = nb ? derive(nb) : null, P = D && res.created ? D.P[res.created] : null;
+            var late = P ? D.late.filter(function (x) { return x.id === P.id; })[0].late : null;
+            var where = !late ? "" : late.seed ? " as seed " + late.seed : late.group ? " in Group " + late.group : " from round " + late.round;
+            toast(tag + " joined " + b.name + where + ".");
+        }).catch(function (err) {
+            if (err.status === 401) { signOut(); return; }
+            dialogError(err.message || "Couldn't add them.", known ? "fx-late-who" : "fx-late-tag");
+        });
+    }
     function closeModal() {
         var back = ui.modal && ui.modal.back;
         ui.modal = null;
@@ -1007,6 +1096,11 @@
         if (!root) { return; }
         var M = ui.modal;
         if (!M) { root.innerHTML = ""; return; }
+        if (M.kind === "late") {
+            if (!STATE || !byId(M.g) || byId(M.g).status !== "live") { ui.modal = null; root.innerHTML = ""; return; }
+            root.innerHTML = lateHTML(M);
+            return;
+        }
         if (M.kind === "signin" || M.kind === "add") {
             var signin = M.kind === "signin";
             root.innerHTML = '<div class="fx-scrim" data-act="scrim"><form class="fx-modal" role="dialog" aria-modal="true" aria-labelledby="fx-dlg-title" data-form="' + (signin ? "signin" : "add-game") + '" autocomplete="off">' +
@@ -1256,6 +1350,7 @@
             case "big-exit": exitBig(); break;
             case "signin": openSimple("signin"); break;
             case "game-add": openSimple("add"); break;
+            case "late-open": openLate(); break;
             case "signout": signOut(); toast("Signed out on this device."); break;
             case "toggle-to": ui.spectate = !ui.spectate; savePrefs(); if (!ui.spectate) { loadPlayers(); } render(); break;
             case "unfollow": delete ui.follow[g]; savePrefs(); render(); break;
@@ -1312,6 +1407,8 @@
             if (!b || newName === b.name) { return; }
             if (newName.length < 2) { toast("Game names need at least 2 characters.", "warn"); return; }
             op({ op: "game-edit", game: b.id, name: newName }, "Renamed to " + newName + ".");
+        } else if (kind === "late") {
+            if (ui.modal && ui.modal.kind === "late") { addLate(); }
         } else if (kind === "walkin") {
             var inp = document.getElementById("fx-walkin"), tag = inp.value.replace(/\s+/g, " ").trim();
             if (tag.length < 2) { toast("Gamer tags need at least 2 characters.", "warn"); return; }
@@ -1337,9 +1434,22 @@
             if (clean !== t.value) { t.value = clean; }
             M.s[i] = clean; autoPick(); syncModal();
         } else if (t.id === "fx-m-setup" && ui.modal) { ui.modal.setup = t.value; }
+        else if (t.id === "fx-late-tag" && ui.modal) { ui.modal.tag = t.value; }
     });
     document.addEventListener("change", function (e) {
         var t = e.target;
+        if (ui.modal && ui.modal.kind === "late") {
+            if (t.id === "fx-late-group") { ui.modal.group = t.value; syncLate(); return; }
+            if (t.id === "fx-late-paid") { ui.modal.paid = t.checked; return; }
+            if (t.id === "fx-late-who") {
+                ui.modal.who = t.value;
+                ui.modal.error = "";
+                renderModal();
+                var focus = document.getElementById(t.value ? "fx-late-who" : "fx-late-tag");
+                if (focus) { focus.focus(); }
+                return;
+            }
+        }
         if (t.hasAttribute("data-follow")) {
             var g = t.getAttribute("data-follow");
             if (t.value) { ui.follow[g] = t.value; } else { delete ui.follow[g]; }
