@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Bracket · Fusion Tournament</title>
+        <meta name="theme-color" content="#120a2e">
+        <script>document.documentElement.classList.add("js");</script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Saira:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700&display=swap">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="css/bracket.css">
+        <link rel="icon" type="image/x-icon" href="img/logo.png">
+        <script src="script.js" defer></script>
+        <script src="js/bracket-engine.js" defer></script>
+        <script src="js/bracket-app.js" defer></script>
+    </head>
+    <body class="page-bracket">
+        <header id="header" class="scrolled">
+            <a href="index.html" class="brand"><img src="img/logo-small.png" width="480" height="180" class="logo" alt="Fusion Tournament home"></a>
+            <nav id="mySidenav" class="sidenav" aria-label="Main">
+                <button type="button" class="closebtn" aria-label="Close menu" onclick="closeNav()">&times;</button>
+                <ul id="navbar">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#about-index">About</a></li>
+                    <li><a href="rules.html">Rules</a></li>
+                    <li><a href="index.html#register">Sign up</a></li>
+                    <li><a class="active" href="bracket.html">Bracket</a></li>
+                    <li><a href="#foot">Contact</a></li>
+                </ul>
+            </nav>
+            <div id="mobile">
+                <button type="button" id="bar" class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mySidenav" onclick="openNav()">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="fx" id="bracket">
+            <div class="fx-wrap" id="fx-app">
+                <div class="fx-head">
+                    <div>
+                        <h1 class="section-title">Bracket</h1>
+                        <p class="fx-sub">Loading the brackets…</p>
+                    </div>
+                </div>
+                <noscript><p class="fx-muted">Turn on JavaScript to see the live bracket.</p></noscript>
+            </div>
+        </main>
+        <div id="fx-big"></div>
+        <div id="fx-modal"></div>
+        <div id="fx-toasts" class="fx-toasts" aria-live="polite"></div>
+
+        <footer id="foot">
+            <div class="foot-grid">
+                <div class="col">
+                    <img class="logo" src="img/logo-small.png" width="480" height="180" alt="Fusion Tournament" loading="lazy">
+                    <h4>Contact</h4>
+                    <p><strong>Address:</strong> Charlottetown, PE, Canada</p>
+                    <p><strong>Phone:</strong> (902)3882269</p>
+                    <p><strong>Email:</strong> <a href="mailto:fusion@deets.technology">fusion@deets.technology</a></p>
+                </div>
+                <div class="col follow">
+                    <h4>Follow us</h4>
+                    <div class="icon" aria-hidden="true">
+                        <i class="fab fa-facebook"></i>
+                        <i class="fab fa-twitter"></i>
+                        <i class="fab fa-instagram"></i>
+                        <i class="fab fa-pinterest-p"></i>
+                        <i class="fab fa-youtube"></i>
+                    </div>
+                </div>
+                <div class="col">
+                    <h4>About</h4>
+                    <a href="#">About us</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms &amp; Conditions</a>
+                    <a href="#">Contact us</a>
+                    <p class="pay-label">Secured Payment Gateways</p>
+                    <img class="pay" src="img/pay.png" width="224" height="32" alt="" loading="lazy">
+                </div>
+            </div>
+            <div class="copyright">
+                <p><a href="https://deets.technology/">DEETS</a></p>
+            </div>
+        </footer>
+    </body>
+</html>
