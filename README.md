@@ -15,6 +15,8 @@ live site and its original repo. Nothing here is deployed.
 - Game updated to FC 27; duplicate "Games" menu link removed.
 - Gameplay section with the official Super Smash Bros. Ultimate and EA SPORTS FC 27 trailers, embedded
   from YouTube (replacing the previous-tournament clips).
+- Join the Discord: a button beside Register, its own section above the newsletter, and a Discord icon in the
+  footer, all using the server's permanent invite link.
 - One registration background for every screen size (phones used to download a separate 58 MB image).
 
 ## Files not in this repo

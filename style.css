@@ -12,6 +12,8 @@
     --pink: #e143a9;
     --pink-hot: #ff62c6;
     --cyan: #02c5fe;
+    --discord: #5865f2;
+    --discord-light: #8c94f8;
     --ink: #f4f0ff;
     --muted: #b9b0dd;
 
@@ -88,6 +90,7 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.6rem;
     min-height: 3rem;
     padding: 0.7rem 2.25rem;
     border: 0;
@@ -117,6 +120,32 @@ a {
 
 .btn-secondary:hover {
     box-shadow: 0 0 22px rgba(2, 197, 254, 0.55);
+}
+
+/* Discord buttons use Discord's own blurple so people recognise where they lead */
+.btn-discord {
+    background: var(--discord);
+    color: #fff;
+}
+
+.btn-discord:hover {
+    background: #6b76f6;
+    box-shadow: 0 0 0 1px #6b76f6, 0 0 24px rgba(88, 101, 242, 0.6);
+}
+
+.btn-ghost {
+    border: 1.5px solid rgba(244, 240, 255, 0.5);
+    background: rgba(11, 6, 32, 0.45);
+    color: var(--ink);
+}
+
+.btn-ghost:hover {
+    border-color: var(--discord-light);
+    background: rgba(88, 101, 242, 0.3);
+}
+
+.btn .fab {
+    font-size: 1.2em;
 }
 
 /* Header */
@@ -291,6 +320,24 @@ a {
     min-height: 3.35rem;
     padding-inline: 3rem;
     font-size: 1.125rem;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.9rem;
+}
+
+@media (max-width: 480px) {
+    .hero-actions {
+        flex-direction: column;
+        width: min(100%, 19rem);
+    }
+
+    .overlay-text .hero-actions .btn {
+        padding-inline: 1.5rem;
+    }
 }
 
 /* Intro splash: the Fusion teaser plays full screen on a first visit. During the
@@ -657,6 +704,64 @@ a {
     border-radius: 0 6px 6px 0;
 }
 
+/* Discord: where players hang out between tournaments */
+
+#discord {
+    padding: clamp(3.5rem, 7vw, 5.5rem) var(--gutter);
+    border-top: 1px solid var(--line);
+    background:
+        radial-gradient(ellipse 55% 90% at 90% 50%, rgba(88, 101, 242, 0.24), transparent 70%),
+        var(--night);
+}
+
+.discord-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+    max-width: var(--maxw);
+    margin: 0 auto;
+}
+
+.discord-mark {
+    display: grid;
+    place-items: center;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 24px;
+    background: var(--discord);
+    color: #fff;
+    font-size: 2.6rem;
+    box-shadow: 0 0 32px rgba(88, 101, 242, 0.5);
+}
+
+.discord-copy .section-title {
+    margin-bottom: 0.5rem;
+}
+
+.discord-copy p {
+    max-width: 34rem;
+    color: var(--muted);
+}
+
+@media (max-width: 760px) {
+    .discord-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .discord-card .btn {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
+    .discord-mark {
+        width: 3.75rem;
+        height: 3.75rem;
+        border-radius: 18px;
+        font-size: 2rem;
+    }
+}
+
 /* Footer */
 
 #foot {
@@ -710,6 +815,19 @@ a {
 
 #foot a:hover {
     color: var(--cyan);
+}
+
+/* The Discord icon is the one live social link, so it carries Discord's colour */
+#foot .icon .social {
+    display: inline-flex;
+    width: auto;
+    margin: 0;
+    font-size: inherit;
+    color: var(--discord-light);
+}
+
+#foot .icon .social:hover {
+    color: var(--ink);
 }
 
 /* Links inside a sentence (email, DEETS) stay inline */
