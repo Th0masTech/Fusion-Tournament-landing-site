@@ -19,10 +19,10 @@ live site and its original repo. Nothing here is deployed.
 
 ## Files not in this repo
 
-These are on the live web host and need to be copied in before deploying from this repo:
+The top section's moving background lives only on the live web host. Until it's copied in, the site shows
+a still image (`img/hero-smash.jpg`) in its place:
 
 - `vid/SSYouTube.online_Super Smash Bros. Ultimate -  Everyone is Here! (Live Wallpaper)_1080p.mp4`
-- `img/967393.jpg` (registration background)
 
 ## Viewing it locally
 

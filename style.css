@@ -520,12 +520,13 @@ a {
 
 /* Registration: laid out as a ticket, since that's what you're buying */
 
-/* One background for every screen size (phones used to download a separate 58 MB image) */
+/* The Smash roster is cut out onto the page's own violet, so its edges disappear into the
+   section. It's sized to the section's height, so no character gets cropped. */
 #register {
     padding: var(--section-y) var(--gutter);
     background:
         linear-gradient(90deg, rgba(18, 10, 46, 0.9) 0%, rgba(18, 10, 46, 0.55) 55%, rgba(18, 10, 46, 0.2) 100%),
-        url("img/967393.jpg") right top / cover no-repeat;
+        url("img/register-roster.jpg") right bottom / auto 100% no-repeat;
     background-color: var(--night);
 }
 
