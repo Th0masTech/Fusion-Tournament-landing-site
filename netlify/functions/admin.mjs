@@ -3,8 +3,9 @@
 //   GET  /api/admin/players  everyone who signed up, with real names, emails and paid status
 //   POST /api/admin/op       one change: { op, game, ... }
 import {
-  Engine, GAMES, MAX_PLAYERS, HttpError, json, respond, withClient, transaction, bumpRevision, loadState,
-  engineBracket, pruneStale, requireOrganizer, listPlayers, cleanText, tagKey, newId,
+  Engine, COLORS, MAX_PLAYERS, MAX_GAMES, SETTING_KEYS, HttpError, json, respond, withClient, transaction,
+  bumpRevision, loadState, engineBracket, pruneStale, requireOrganizer, listPlayers, cleanText, cleanSetting,
+  tagKey, newId, slugify,
 } from "../lib/core.mjs";
 
 const score = (v) => {
@@ -19,24 +20,25 @@ const SET_SEEDS = `UPDATE entries e SET seed = o.n
 
 async function runOp(body) {
   const op = String(body.op || "");
-  const game = body.game;
+  const game = body.game === undefined || body.game === null || body.game === "" ? null : String(body.game);
 
   return transaction(async (client) => {
     let br = null;
-    if (game !== undefined && game !== null) {
-      if (!Object.hasOwn(GAMES, game)) throw new HttpError(400, "Unknown game.");
+    if (game !== null) {
       br = (await client.query(
-        "SELECT game, status, reset, seeds FROM brackets WHERE game = $1 FOR UPDATE", [game]
+        "SELECT game, name, status, format, settings, seeds FROM brackets WHERE game = $1 FOR UPDATE", [game]
       )).rows[0];
+      if (!br) throw new HttpError(404, "That game isn't on the list anymore. Refresh the page.");
+      br.settings = br.settings && typeof br.settings === "object" ? br.settings : {};
     }
     const needGame = () => { if (!br) throw new HttpError(400, "Say which game this change is for."); };
     const needSetup = () => {
       needGame();
-      if (br.status !== "setup") throw new HttpError(409, `${GAMES[game]} has already started. Go back to setup first.`);
+      if (br.status !== "setup") throw new HttpError(409, `${br.name} has already started. Go back to sign-ups first.`);
     };
     const needLive = () => {
       needGame();
-      if (br.status !== "live") throw new HttpError(409, `${GAMES[game]} hasn't started yet.`);
+      if (br.status !== "live") throw new HttpError(409, `${br.name} hasn't started yet.`);
     };
     const engineView = async () => {
       const state = await loadState(client);
@@ -46,8 +48,88 @@ async function runOp(body) {
       if (err && err.code === "23505") throw new HttpError(409, message);
       throw err;
     };
+    const gameName = (value) => {
+      const name = cleanText(value, 40);
+      if (name.length < 2) throw new HttpError(400, "Game names need at least 2 characters.");
+      return name;
+    };
+    let created = null;
 
     switch (op) {
+      case "game-add": {
+        const name = gameName(body.name);
+        const rows = (await client.query("SELECT game, name, color, sort FROM brackets ORDER BY sort FOR UPDATE")).rows;
+        if (rows.some((r) => r.name.toLowerCase() === name.toLowerCase())) throw new HttpError(409, `There's already a game called “${name}”.`);
+        if (rows.length >= MAX_GAMES) throw new HttpError(409, `The site runs up to ${MAX_GAMES} games at once. Delete one first.`);
+        const used = new Set(rows.map((r) => r.color));
+        const color = COLORS.find((c) => !used.has(c)) || COLORS[rows.length % COLORS.length];
+        const sort = rows.reduce((max, r) => Math.max(max, r.sort), 0) + 1;
+        created = slugify(name, rows.map((r) => r.game));
+        await client.query("INSERT INTO brackets (game, name, sort, color) VALUES ($1, $2, $3, $4)", [created, name, sort, color]);
+        break;
+      }
+      case "game-edit": {
+        needGame();
+        const sets = [], vals = [game];
+        if (body.name !== undefined) {
+          const name = gameName(body.name);
+          const clash = await client.query("SELECT 1 FROM brackets WHERE game <> $1 AND lower(name) = lower($2)", [game, name]);
+          if (clash.rowCount) throw new HttpError(409, `There's already a game called “${name}”.`);
+          vals.push(name);
+          sets.push(`name = $${vals.length}`);
+        }
+        if (body.color !== undefined) {
+          if (!COLORS.includes(body.color)) throw new HttpError(400, "Pick one of the listed colours.");
+          vals.push(body.color);
+          sets.push(`color = $${vals.length}`);
+        }
+        if (!sets.length) throw new HttpError(400, "Nothing to change.");
+        await client.query(`UPDATE brackets SET ${sets.join(", ")} WHERE game = $1`, vals);
+        break;
+      }
+      case "game-remove": {
+        needSetup();
+        // Sign-ups, results and called matches go with it (ON DELETE CASCADE).
+        await client.query("DELETE FROM brackets WHERE game = $1", [game]);
+        // Anyone who was only signed up for this game is removed entirely.
+        await client.query("DELETE FROM players p WHERE NOT EXISTS (SELECT 1 FROM entries e WHERE e.player_id = p.id)");
+        break;
+      }
+      case "format": {
+        needGame();
+        const live = br.status === "live";
+        let format = br.format;
+        if (body.format !== undefined) {
+          if (live) throw new HttpError(409, `${br.name} has already started. Go back to sign-ups to change its format.`);
+          if (!Engine.FORMATS.includes(body.format)) throw new HttpError(400, "Unknown format.");
+          format = body.format;
+        }
+        const input = body.settings && typeof body.settings === "object" ? body.settings : {};
+        const next = { ...br.settings };
+        for (const [key, value] of Object.entries(input)) {
+          if (!SETTING_KEYS.includes(key)) throw new HttpError(400, "Unknown setting.");
+          next[key] = cleanSetting(key, value);
+        }
+        if (live) {
+          const D = await engineView();
+          for (const key of Object.keys(input)) {
+            const resetApplies = format === "double" || (format === "groups" && D.plan.ko === "double");
+            if (key === "reset" && resetApplies) {
+              if (D.out.GF1 && D.out.GF1.status === "done") throw new HttpError(409, "The Grand Final already has a result, so bracket reset is locked.");
+            } else if (key === "rounds" && format === "swiss") {
+              const paired = D.rounds.filter((r) => r.paired).length;
+              const p = Engine.plan(format, next, D.players.length);
+              if (p.problems.length) throw new HttpError(409, p.problems[0]);
+              if (p.rounds < paired) throw new HttpError(409, `Round ${paired} is already under way, so this needs at least ${paired} rounds.`);
+            } else {
+              throw new HttpError(409, `${br.name} has already started. Go back to sign-ups to change that.`);
+            }
+          }
+        }
+        await client.query("UPDATE brackets SET format = $2, settings = $3::jsonb WHERE game = $1", [game, format, JSON.stringify(next)]);
+        if (live) await pruneStale(client, game);
+        break;
+      }
       case "paid": {
         const r = await client.query("UPDATE players SET paid = $2 WHERE id = $1", [String(body.playerId), !!body.paid]);
         if (!r.rowCount) throw new HttpError(404, "That player isn't on the list.");
@@ -77,13 +159,13 @@ async function runOp(body) {
         const tag = cleanText(body.tag, 24);
         if (tag.length < 2) throw new HttpError(400, "Gamer tags need at least 2 characters.");
         const n = (await client.query("SELECT COUNT(*)::int AS n FROM entries WHERE game = $1 AND NOT removed", [game])).rows[0].n;
-        if (n >= MAX_PLAYERS) throw new HttpError(409, `${GAMES[game]} is full.`);
+        if (n >= MAX_PLAYERS) throw new HttpError(409, `${br.name} is full.`);
         const id = newId("p");
         await client.query(
           "INSERT INTO players (id, tag, real_name, source) VALUES ($1, $2, $3, 'walk-in')", [id, tag, cleanText(body.name, 60) || null]
         );
         await client.query("INSERT INTO entries (game, player_id, tag_key) VALUES ($1, $2, $3)", [game, id, tagKey(tag)])
-          .catch(uniqueTag(`“${tag}” is already in ${GAMES[game]}.`));
+          .catch(uniqueTag(`“${tag}” is already in ${br.name}.`));
         break;
       }
       case "seed": {
@@ -98,7 +180,8 @@ async function runOp(body) {
         const ids = (await client.query(
           "SELECT player_id FROM entries WHERE game = $1 AND NOT removed ORDER BY seed NULLS LAST, created_at, player_id", [game]
         )).rows.map((r) => r.player_id);
-        if (ids.length < 2) throw new HttpError(409, "A bracket needs at least 2 players.");
+        const p = Engine.plan(br.format, br.settings, ids.length);
+        if (p.problems.length) throw new HttpError(409, p.problems[0]);
         await client.query("DELETE FROM results WHERE game = $1", [game]);
         await client.query("DELETE FROM calls WHERE game = $1", [game]);
         await client.query(
@@ -116,18 +199,6 @@ async function runOp(body) {
         await client.query("UPDATE brackets SET status = 'setup', seeds = '[]'::jsonb, started_at = NULL WHERE game = $1", [game]);
         break;
       }
-      case "reset": {
-        needGame();
-        if (br.status === "live") {
-          const D = await engineView();
-          if (D.out.GF1 && D.out.GF1.status === "done") {
-            throw new HttpError(409, "The Grand Final already has a result, so bracket reset is locked.");
-          }
-        }
-        await client.query("UPDATE brackets SET reset = $2 WHERE game = $1", [game, !!body.on]);
-        if (br.status === "live") await pruneStale(client, game);
-        break;
-      }
       case "result":
       case "clear":
       case "call":
@@ -135,12 +206,15 @@ async function runOp(body) {
         needLive();
         const mid = String(body.matchId || "");
         const D = await engineView();
-        const m = D.st.M[mid], o = D.out[mid];
+        const m = D.M[mid], o = D.out[mid];
         if (!m || m.auto || !o) throw new HttpError(404, "That match isn't in the bracket.");
         if (op === "result") {
           if (["ready", "live", "done"].indexOf(o.status) < 0) throw new HttpError(409, "That match is still waiting on an earlier result.");
-          const a = o.slots[0].p, b = o.slots[1].p, w = String(body.winner || "");
-          if (w !== a && w !== b) throw new HttpError(400, "Pick one of the two players as the winner.");
+          const a = o.slots[0].p, b = o.slots[1].p;
+          const draw = body.draw === true;
+          if (draw && !m.draws) throw new HttpError(400, "This match can't end in a draw.");
+          const w = draw ? null : String(body.winner || "");
+          if (!draw && w !== a && w !== b) throw new HttpError(400, "Pick one of the two players as the winner.");
           await client.query(
             `INSERT INTO results (game, match_id, a, b, w, sa, sb, t) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
              ON CONFLICT (game, match_id) DO UPDATE
@@ -168,7 +242,7 @@ async function runOp(body) {
     }
 
     await bumpRevision(client);
-    return { ok: true, state: await loadState(client), players: await listPlayers(client) };
+    return { ok: true, created, state: await loadState(client), players: await listPlayers(client) };
   });
 }
 

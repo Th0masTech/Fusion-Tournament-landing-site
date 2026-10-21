@@ -15,6 +15,14 @@
     --ink: #f4f0ff;
     --muted: #b9b0dd;
 
+    /* One colour per game (organizers pick these on the Bracket page) */
+    --g-pink: var(--pink);
+    --g-cyan: var(--cyan);
+    --g-violet: #a98bff;
+    --g-green: #3ee0a0;
+    --g-amber: #ffc441;
+    --g-orange: #ff8a4c;
+
     --display: "Michroma", "Eurostile", "Arial Black", sans-serif;
     --text: "Saira", "Segoe UI", system-ui, sans-serif;
 
@@ -676,7 +684,7 @@ a {
     margin-bottom: 0.5rem;
 }
 
-/* Pink for Smash, cyan for FC, same as the Rules page */
+/* Each game in its own colour (pink for Smash and cyan for FC, as on the Rules page) */
 .game-opt {
     --accent: var(--pink);
     display: flex;
@@ -690,10 +698,6 @@ a {
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.game-opt[data-game="fc"] {
-    --accent: var(--cyan);
 }
 
 .game-opt input {
@@ -710,6 +714,13 @@ a {
 .game-opt.is-closed {
     opacity: 0.55;
     cursor: not-allowed;
+}
+
+.games-note {
+    padding: 0.75rem 1rem;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    color: var(--muted);
 }
 
 .closed-note {

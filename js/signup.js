@@ -1,17 +1,26 @@
-// Sign-up form on the homepage: sends the entry to /api/signup, which puts the
-// gamer tag straight into the bracket for each tournament picked.
+// Sign-up form on the homepage: lists the games the organizers have set up, then sends
+// the entry to /api/signup, which puts the gamer tag straight into each game picked.
 (function () {
     var form = document.getElementById("signup");
     if (!form) {
         return;
     }
-    var GAMES = { smash: "Smash Ultimate", fc: "FC 27" };
+    var COLORS = ["pink", "cyan", "violet", "green", "amber", "orange"];
     var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     var msg = document.getElementById("su-msg");
     var done = document.getElementById("signup-done");
     var submit = document.getElementById("su-submit");
+    var box = document.getElementById("su-games");
     var field = function (id) { return document.getElementById(id); };
 
+    function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
+    }
+    function and(names) {
+        return names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+    }
     function say(text, focusId) {
         msg.textContent = text || "";
         msg.hidden = !text;
@@ -19,30 +28,36 @@
             field(focusId).focus();
         }
     }
+    function showGames(html) {
+        box.innerHTML = "<legend>Which tournaments?</legend>" + html;
+    }
 
-    // A game whose bracket has started can't take new sign-ups.
-    fetch("/api/state", { headers: { accept: "application/json" } })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (state) {
-            if (!state || !state.brackets) {
-                return;
-            }
-            state.brackets.forEach(function (b) {
-                var opt = form.querySelector('.game-opt[data-game="' + b.game + '"]');
-                if (!opt) {
+    // The games come from the organizers' list, so a new game shows up here as soon as it's added.
+    function loadGames() {
+        fetch("/api/state", { headers: { accept: "application/json" } })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+            .then(function (state) {
+                var games = (state && state.brackets) || [];
+                if (!games.length) {
+                    showGames('<p class="games-note">No tournaments are open for sign-up yet. Check back soon.</p>');
                     return;
                 }
-                var started = b.status === "live";
-                var box = opt.querySelector("input");
-                box.disabled = started;
-                if (started) {
-                    box.checked = false;
-                }
-                opt.classList.toggle("is-closed", started);
-                opt.querySelector(".closed-note").hidden = !started;
+                var checked = {};
+                Array.prototype.forEach.call(box.querySelectorAll("input:checked"), function (b) { checked[b.value] = true; });
+                showGames(games.map(function (g) {
+                    var started = g.status === "live";
+                    var color = COLORS.indexOf(g.color) >= 0 ? g.color : "pink";
+                    return '<label class="game-opt' + (started ? " is-closed" : "") + '" data-game="' + esc(g.game) + '" style="--accent: var(--g-' + color + ')">' +
+                        '<input type="checkbox" name="games" value="' + esc(g.game) + '"' + (started ? " disabled" : checked[g.game] ? " checked" : "") + ">" +
+                        "<span>" + esc(g.name) + "</span>" +
+                        (started ? '<em class="closed-note">Bracket started</em>' : "") + "</label>";
+                }).join(""));
+            })
+            .catch(function () {
+                showGames('<p class="games-note">Couldn’t load the tournaments. Refresh the page to try again.</p>');
             });
-        })
-        .catch(function () {});
+    }
+    loadGames();
 
     form.addEventListener("submit", function (event) {
         event.preventDefault();
@@ -76,17 +91,21 @@
             body: JSON.stringify(data)
         })
             .then(function (r) {
-                return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok, body: body }; });
+                return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok, status: r.status, body: body }; });
             })
             .then(function (res) {
                 if (!res.ok) {
                     say(res.body.error || "That sign-up didn't go through. Try again.");
+                    if (res.status === 409) {
+                        loadGames();
+                    }
                     return;
                 }
-                var names = res.body.games.map(function (g) { return GAMES[g]; });
+                var names = (res.body.games || []).map(function (g) { return g.name; });
+                var n = names.length;
                 field("done-tag").textContent = data.tag;
-                field("done-text").textContent = "You're on the " + names.join(" and ") + " bracket" + (names.length > 1 ? "s" : "") +
-                    ". Last step: buy " + (names.length > 1 ? "two tickets, one per tournament," : "your ticket") + " so your spot counts.";
+                field("done-text").textContent = "You're on the " + and(names) + " bracket" + (n > 1 ? "s" : "") +
+                    ". Last step: buy " + (n > 1 ? (n === 2 ? "two" : n) + " tickets, one per tournament," : "your ticket") + " so your spot counts.";
                 form.hidden = true;
                 done.hidden = false;
                 done.focus();
@@ -104,6 +123,7 @@
         form.reset();
         done.hidden = true;
         form.hidden = false;
+        loadGames();
         field("su-tag").focus();
     });
 })();

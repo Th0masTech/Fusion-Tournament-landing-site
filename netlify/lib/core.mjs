@@ -4,8 +4,9 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import Engine from "../../js/bracket-engine.js";
 
 export { Engine };
-export const GAMES = { smash: "Smash Ultimate", fc: "FC 27" };
 export const MAX_PLAYERS = 128;
+export const MAX_GAMES = 12;
+export const COLORS = ["pink", "cyan", "violet", "green", "amber", "orange"];
 
 // One database client per function instance, created on first use.
 let database = null;
@@ -56,6 +57,44 @@ export function cleanText(value, max) {
 }
 export function tagKey(tag) {
   return cleanText(tag, 24).toLowerCase();
+}
+
+// A short id for a new game, used in links like bracket.html#tekken-8.
+export function slugify(name, taken) {
+  let base = String(name).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24).replace(/-+$/, "") || "game";
+  if (base === "big") base = "big-game"; // #big opens the big screen
+  const used = new Set(taken);
+  let id = base;
+  for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+  return id;
+}
+
+// Format settings as stored: unknown keys dropped, values coerced to what the engine reads.
+export const SETTING_KEYS = ["reset", "third", "draws", "rounds", "groups", "advance", "ko"];
+export function cleanSetting(key, value) {
+  const whole = (v, lo, hi) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    if (!Number.isInteger(n)) throw new HttpError(400, "Use a whole number.");
+    return Math.max(lo, Math.min(hi, n));
+  };
+  switch (key) {
+    case "reset":
+    case "third":
+    case "draws":
+      return !!value;
+    case "rounds":
+      return whole(value, 1, 99);
+    case "groups":
+      return whole(value, 1, 26);
+    case "advance":
+      return whole(value, 1, 8) || 2;
+    case "ko":
+      return value === "double" ? "double" : "single";
+    default:
+      throw new HttpError(400, "Unknown setting.");
+  }
 }
 
 function isConnectionError(err) {
@@ -110,10 +149,12 @@ export async function bumpRevision(client) {
 
 const iso = (t) => (t ? new Date(t).toISOString() : null);
 
-// The public picture of every bracket. Real names and emails never leave through here.
+// The public picture of every game. Real names and emails never leave through here.
 export async function loadState(client) {
   const meta = (await client.query("SELECT rev, updated_at FROM meta WHERE id = 1")).rows[0] || { rev: 0, updated_at: null };
-  const brackets = (await client.query("SELECT game, name, status, reset, seeds, started_at FROM brackets ORDER BY sort, game")).rows;
+  const brackets = (await client.query(
+    "SELECT game, name, color, status, format, settings, seeds, started_at FROM brackets ORDER BY sort, game"
+  )).rows;
   const tags = (await client.query("SELECT id, tag FROM players")).rows;
   const entries = (await client.query(
     "SELECT game, player_id FROM entries WHERE NOT removed ORDER BY game, seed NULLS LAST, created_at, player_id"
@@ -139,8 +180,10 @@ export async function loadState(client) {
       return {
         game: b.game,
         name: b.name,
+        color: COLORS.includes(b.color) ? b.color : "pink",
         status: b.status,
-        reset: b.reset,
+        format: Engine.FORMATS.includes(b.format) ? b.format : "double",
+        settings: b.settings && typeof b.settings === "object" ? b.settings : {},
         startedAt: iso(b.started_at),
         players: ids.map((id) => ({ id, tag: tagOf[id] || "?" })),
         results: b.status === "live" ? res : {},
@@ -150,19 +193,20 @@ export async function loadState(client) {
   };
 }
 
-// The bracket in the shape the engine reads.
+// A game in the shape the engine reads.
 export function engineBracket(publicBracket) {
   return {
+    format: publicBracket.format,
+    settings: publicBracket.settings,
     players: publicBracket.players.map((p) => ({ id: p.id, name: p.tag })),
     results: publicBracket.results,
     live: publicBracket.live,
-    reset: publicBracket.reset,
   };
 }
 
 // Drops results and calls that no longer fit the bracket (an earlier result changed).
 export async function pruneStale(client, game) {
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     const state = await loadState(client);
     const b = state.brackets.find((x) => x.game === game);
     if (!b || b.status !== "live") return;

@@ -16,7 +16,8 @@ live site and its original repo. Nothing here is deployed.
 - Gameplay section with the official Super Smash Bros. Ultimate and EA SPORTS FC 27 trailers, embedded
   from YouTube (replacing the previous-tournament clips).
 - One registration background for every screen size (phones used to download a separate 58 MB image).
-- Sign-up form on the homepage that feeds a live double-elimination bracket page (see below).
+- Sign-up form on the homepage that feeds a live bracket page, with five tournament formats and games the
+  organizers set up themselves (see below).
 
 ## Files not in this repo
 
@@ -28,15 +29,31 @@ These are on the live web host and need to be copied in before deploying from th
 ## Sign-ups and the live bracket
 
 People sign up in the Registration section of the homepage: gamer tag, real name, email, and which
-tournaments (Smash Ultimate, FC 27, or both). Their gamer tag appears on the new **Bracket** page straight away.
-Paying still happens through the Square link, which the form points to once they've signed up.
+tournaments they're entering. Their gamer tag appears on the new **Bracket** page straight away. Paying still
+happens through the Square link, which the form points to once they've signed up.
 
-Organizers sign in on the Bracket page with a shared password. Before a bracket starts they can see real names
-and emails, tick off who has paid, remove sign-ups that didn't pay, add walk-ins, and set or shuffle the seeds.
-**Start bracket** closes sign-ups for that game and generates the double-elimination bracket (byes for top seeds,
-bracket reset in the Grand Final). From then on they tap a match to call it to a setup or report the winner and
-score. Every screen with the Bracket page open updates within a few seconds, and **Big screen** gives the venue TV
-a now playing / up next / latest results view (`bracket.html#big` opens straight into it).
+Organizers sign in on the Bracket page with a shared password. From there they can:
+
+- **Manage the games.** Add a game, rename it, give it a colour, or delete it (before its bracket starts). The
+  sign-up form lists whatever games are set up, so after the next-games poll nobody has to touch the code. The
+  About section's text still names Smash and FC 27, so update that by hand.
+- **Pick each game's format** before it starts:
+  - **Double elimination:** two losses and you're out, with an optional bracket reset in the Grand Final.
+  - **Single elimination:** one loss and you're out, with an optional third-place match.
+  - **Round robin:** everyone plays everyone.
+  - **Groups, then knockout:** round-robin groups, then the top players from each go into a single- or
+    double-elimination bracket.
+  - **Swiss:** a set number of rounds, each paired by record, with no rematches.
+
+  Round robin, groups and Swiss can allow draws (3 points a win, 1 a draw). The format is locked once the
+  bracket starts. Going back to sign-ups unlocks it again but clears the results.
+- **Run sign-ups.** See real names and emails, tick off who has paid, remove sign-ups that didn't pay, add
+  walk-ins, and set or shuffle the seeds.
+- **Run the event.** **Start bracket** closes sign-ups for that game. After that, tap a match to call it to a
+  setup or report the result and score.
+
+Every screen with the Bracket page open updates within a few seconds. **Big screen** gives the venue TV a now
+playing / up next / standings / latest results view, and `bracket.html#big` opens straight into it.
 
 Real names and emails only go to signed-in organizers. The public page only ever gets gamer tags.
 
@@ -44,7 +61,7 @@ Real names and emails only go to signed-in organizers. The public page only ever
 | --- | --- |
 | Sign-up form | `index.html` (`#register`), `js/signup.js`, styles at the end of the ticket section in `style.css` |
 | Bracket page | `bracket.html`, `js/bracket-app.js`, `css/bracket.css` |
-| Bracket rules | `js/bracket-engine.js`, shared by the page and the server so both agree on who plays whom |
+| Bracket rules | `js/bracket-engine.js`: every format, standings and placings, shared by the page and the server so both agree on who plays whom |
 | Server | `netlify/functions/` (`state`, `signup`, `admin`) and `netlify/lib/core.mjs` |
 | Database tables | `netlify/database/migrations/` |
 
