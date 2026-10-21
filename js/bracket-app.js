@@ -382,7 +382,7 @@
         }
         return null;
     }
-    function recordText(D, row) { return D.plan.draws ? row.pts + " pts" : row.w + "–" + row.l; }
+    function recordText(D, row) { return D.plan.draws ? count(row.pts, "pt", "pts") : row.w + "–" + row.l; }
     function followHTML(b, D) {
         var pid = ui.follow[b.id];
         if (!pid || !D.P[pid]) { return ""; }
